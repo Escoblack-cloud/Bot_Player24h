@@ -3,8 +3,8 @@ const app = express();
 
 app.get('/', (req, res) => {
     res.send(
-    '🛡️ Sentinel active | BlackForge Systems'
-);
+        '🛡️ Sentinel active | BlackForge Systems'
+    );
 });
 
 app.listen(process.env.PORT || 3000, () => {
@@ -576,10 +576,18 @@ client.on(
 
             try {
 
-                if (saved.messageId) {
+                if (
+                    saved.messageId &&
+                    saved.channelId
+                ) {
+
+                    const oldChannel =
+                        await client.channels.fetch(
+                            saved.channelId
+                        );
 
                     const oldMsg =
-                        await interaction.channel.messages.fetch(
+                        await oldChannel.messages.fetch(
                             saved.messageId
                         );
 
@@ -595,6 +603,8 @@ client.on(
 
             saved.messageId =
                 newMsg.id;
+            saved.channelId =
+                interaction.channel.id;
 
             fs.writeFileSync(
                 onlineFile,
