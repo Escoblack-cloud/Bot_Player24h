@@ -192,6 +192,9 @@ setInterval(async () => {
                     const lines =
                         text.split('\n');
 
+
+                    text = null;
+
                     for (const line of lines) {
 
                         const steamMatch =
@@ -664,7 +667,7 @@ Espero que no robe cobre del vecindario.`
 
         });
 
-}, 2000);
+}, 10000);
 
 setInterval(() => {
 
@@ -722,7 +725,13 @@ async function updateHallOfFame() {
             );
 
     if (sortedPlayers.length === 0) {
+
+        console.log(
+            '⚠️ No hay jugadores todavía'
+        );
+
         return;
+
     }
 
     const hallChannel =
@@ -798,9 +807,6 @@ async function updateHallOfFame() {
     if (fs.existsSync(hallMessageFile)) {
         saved = JSON.parse(fs.readFileSync(hallMessageFile, 'utf8') || '{}');
     }
-
-    // después de enviar/editar mensajes
-    fs.writeFileSync(hallMessageFile, JSON.stringify(saved, null, 2));
 
     // ====================
     // TOP MESSAGE
