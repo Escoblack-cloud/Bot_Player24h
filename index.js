@@ -2,7 +2,9 @@ const express = require('express');
 const app = express();
 
 app.get('/', (req, res) => {
-    res.send('Bot online 😎');
+    res.send(
+    '🛡️ Sentinel active | BlackForge Systems'
+);
 });
 
 app.listen(process.env.PORT || 3000, () => {
@@ -157,9 +159,11 @@ const rest =
     new REST({ version: '10' })
         .setToken(process.env.TOKEN);
 
-client.once('ready', async () => {
+client.once('clientReady', async () => {
 
-    console.log('✅ Bot conectado');
+    console.log(
+        '🛡️ Sentinel online | BlackForge Systems'
+    );
 
     try {
 
@@ -181,7 +185,9 @@ client.once('ready', async () => {
             { body: commands }
         );
 
-        console.log('✅ Comandos registrados');
+        console.log(
+            '⚡ Sentinel commands loaded'
+        );
 
     } catch (error) {
 
@@ -580,7 +586,6 @@ client.on(
                     await oldMsg.delete();
 
                 }
-
             } catch { }
 
             const newMsg =
@@ -588,8 +593,18 @@ client.on(
                     embeds: [embed]
                 });
 
-            onlineMessageId =
+            saved.messageId =
                 newMsg.id;
+
+            fs.writeFileSync(
+                onlineFile,
+                JSON.stringify(
+                    saved,
+                    null,
+                    2
+                )
+
+            );
 
             return interaction.reply({
                 content:
@@ -598,39 +613,7 @@ client.on(
             });
 
         }
-        {
 
-            let online = 0;
-
-            if (fs.existsSync('./online.json')) {
-
-                const data =
-                    JSON.parse(
-                        fs.readFileSync(
-                            './online.json',
-                            'utf8'
-                        )
-                    );
-
-                online = data.online || 0;
-
-
-            }
-
-            const embed =
-                new EmbedBuilder()
-                    .setColor('#00ff88')
-                    .setTitle('👥 JUGADORES ONLINE')
-                    .setDescription(
-                        `Hay **${online}/40** jugadores conectados`
-                    )
-                    .setTimestamp();
-
-            return interaction.reply({
-                embeds: [embed]
-            });
-
-        }
 
         // HORAS
         if (
