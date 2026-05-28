@@ -808,6 +808,7 @@ async function updateHallOfFame() {
         saved = JSON.parse(fs.readFileSync(hallMessageFile, 'utf8') || '{}');
     }
 
+
     // ====================
     // TOP MESSAGE
     // ====================
@@ -962,3 +963,14 @@ async function updateHallOfFame() {
         }
 
     }
+
+    fs.writeFileSync(
+        hallMessageFile,
+        JSON.stringify(
+            saved,
+            null,
+            2
+        )
+    );
+
+}
