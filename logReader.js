@@ -696,9 +696,7 @@ setInterval(async () => {
 
     }
 
-}, 30000);
-
-const hallMessageFile = './hallMessage.json'; 
+}, 30000); 
 
 async function updateHallOfFame() {
 
