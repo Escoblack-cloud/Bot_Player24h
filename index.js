@@ -517,9 +517,7 @@ client.on(
                     );
 
                 online = data.online || 0;
-                await interaction.reply(
-                    `👥 Jugadores online: ${online}`
-                );
+
 
             }
 
@@ -725,6 +723,22 @@ No intentes hacer trampas que aquí no somos amateurs. 🚬`
 
             }
 
+            const code =
+                crypto.randomBytes(2)
+                    .toString('hex')
+                    .toUpperCase();
+
+            pending[code] = {
+
+                discordId:
+                    interaction.user.id,
+
+                expires:
+                    Date.now() +
+                    (10 * 60 * 1000)
+
+            };
+
             fs.writeFileSync(
                 './pendingVerifications.json',
                 JSON.stringify(
@@ -734,46 +748,13 @@ No intentes hacer trampas que aquí no somos amateurs. 🚬`
                 )
             );
 
-            return interaction.reply({
-                content:
-                    '❌ Ya tienes una verificación pendiente.',
-                ephemeral: true
-            });
+            const embed =
+                new EmbedBuilder()
+                    .setColor('#00ff88')
+                    .setTitle('🔐 VERIFICACIÓN DAYZ')
+                    .setDescription(
 
-        }
-
-        const code =
-            crypto.randomBytes(2)
-                .toString('hex')
-                .toUpperCase();
-
-        pending[code] = {
-
-            discordId:
-                interaction.user.id,
-
-            expires:
-                Date.now() +
-                (10 * 60 * 1000)
-
-        };
-
-        fs.writeFileSync(
-            './pendingVerifications.json',
-            JSON.stringify(
-                pending,
-                null,
-                2
-            )
-        );
-
-        const embed =
-            new EmbedBuilder()
-                .setColor('#00ff88')
-                .setTitle('🔐 VERIFICACIÓN DAYZ')
-                .setDescription(
-
-                    `📢 Antonio Recio informa:
+                        `📢 Antonio Recio informa:
 
 Para verificar tu cuenta,
 COPIA exactamente este comando
@@ -786,48 +767,17 @@ y pégalo en el chat global de DayZ 😭🔥
 ━━━━━━━━━━━━━━
 
 ⏰ El código expira en 10 minutos.`
-                )
-                .setTimestamp();
+                    )
+                    .setTimestamp();
 
-        return interaction.reply({
-            embeds: [embed],
-            ephemeral: true
-        });
+            return interaction.reply({
+                embeds: [embed],
+                ephemeral: true
+            });
 
+        }
     }
 
 );
-client.on(
-    'disconnect',
-    () => {
 
-        console.log(
-            '⚠️ Discord desconectado'
-        );
-
-    }
-);
-
-client.on(
-    'reconnecting',
-    () => {
-
-        console.log(
-            '🔄 Reconectando Discord...'
-        );
-
-    }
-);
-
-client.on(
-    'error',
-    err => {
-
-        console.log(
-            '❌ Discord error:',
-            err
-        );
-
-    }
-);
 client.login(process.env.TOKEN);
