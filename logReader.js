@@ -23,7 +23,7 @@ const client = new Client({
 
 const JOIN_CHANNEL_ID =
     '1490712034579316857';
-    
+
 const HALL_OF_FAME_CHANNEL_ID =
     process.env.HALL_OF_FAME;
 
@@ -52,7 +52,7 @@ let onlinePlayers = {};
 let steamIDs = {};
 
 let currentOnline = 0;
-
+let lastOnline = -1;
 
 console.log('👀 Leyendo logs...');
 
@@ -138,7 +138,7 @@ async function downloadLog() {
 
             await sftp.end();
 
-        } catch {}
+        } catch { }
 
     }
 
@@ -152,189 +152,189 @@ setInterval(async () => {
         logPath,
         async (err, stats) => {
 
-        if (err) {
+            if (err) {
 
-            console.log(
-'❌ No encuentro server_console.log'
-            );
+                console.log(
+                    '❌ No encuentro server_console.log'
+                );
 
-            return;
+                return;
 
-        }
+            }
 
-        if (stats.size <= lastSize) {
-            return;
-        }
+            if (stats.size <= lastSize) {
+                return;
+            }
 
-        const stream =
-            fs.createReadStream(
-                logPath,
-                {
-                    start: lastSize,
-                    end: stats.size
-                }
-            );
+            const stream =
+                fs.createReadStream(
+                    logPath,
+                    {
+                        start: lastSize,
+                        end: stats.size
+                    }
+                );
 
-        let text = '';
+            let text = '';
 
-        stream.on(
-            'data',
-            data => {
+            stream.on(
+                'data',
+                data => {
 
-            text += data.toString();
+                    text += data.toString();
 
-        });
+                });
 
-        stream.on(
-            'end',
-            async () => {
+            stream.on(
+                'end',
+                async () => {
 
-            const lines =
-                text.split('\n');
+                    const lines =
+                        text.split('\n');
 
-            for (const line of lines) {
+                    for (const line of lines) {
 
-                const steamMatch =
-    line.match(
-/Player "(.+?)" \(steamID=(\d+)/
-    );
-
-if (steamMatch) {
-
-    const playerName =
-        steamMatch[1];
-
-    const steamID =
-        steamMatch[2];
-
-    steamIDs[playerName] =
-        steamID;
-
-    console.log(
-`🆔 ${playerName} => ${steamID}`
-    );
-
-}
-
-                // =========================
-                // VERIFY
-                // =========================
-
-                const verifyMatch =
-                    line.match(
-/BattlEye Server: \(Global\) (.+?): \+\/[Vv]erificar (.+)/
-                    );
-
-                if (verifyMatch) {
-
-                    const playerName =
-                        verifyMatch[1];
-
-                    const code =
-                        verifyMatch[2]
-                        .trim()
-                        .toUpperCase();
-
-                    let pending = {};
-
-                    if (
-                        fs.existsSync(
-                            pendingVerifications
-                        )
-                    ) {
-
-                        pending =
-                            JSON.parse(
-                                fs.readFileSync(
-                                    pendingVerifications,
-                                    'utf8'
-                                ) || '{}'
+                        const steamMatch =
+                            line.match(
+                                /Player "(.+?)" \(steamID=(\d+)/
                             );
 
-                    }
+                        if (steamMatch) {
 
-                    let linked = {};
+                            const playerName =
+                                steamMatch[1];
 
-                    if (
-                        fs.existsSync(
-                            linkedAccountsPath
-                        )
-                    ) {
+                            const steamID =
+                                steamMatch[2];
 
-                        linked =
-                            JSON.parse(
-                                fs.readFileSync(
+                            steamIDs[playerName] =
+                                steamID;
+
+                            console.log(
+                                `🆔 ${playerName} => ${steamID}`
+                            );
+
+                        }
+
+                        // =========================
+                        // VERIFY
+                        // =========================
+
+                        const verifyMatch =
+                            line.match(
+                                /BattlEye Server: \(Global\) (.+?): \+\/[Vv]erificar (.+)/
+                            );
+
+                        if (verifyMatch) {
+
+                            const playerName =
+                                verifyMatch[1];
+
+                            const code =
+                                verifyMatch[2]
+                                    .trim()
+                                    .toUpperCase();
+
+                            let pending = {};
+
+                            if (
+                                fs.existsSync(
+                                    pendingVerifications
+                                )
+                            ) {
+
+                                pending =
+                                    JSON.parse(
+                                        fs.readFileSync(
+                                            pendingVerifications,
+                                            'utf8'
+                                        ) || '{}'
+                                    );
+
+                            }
+
+                            let linked = {};
+
+                            if (
+                                fs.existsSync(
+                                    linkedAccountsPath
+                                )
+                            ) {
+
+                                linked =
+                                    JSON.parse(
+                                        fs.readFileSync(
+                                            linkedAccountsPath,
+                                            'utf8'
+                                        ) || '{}'
+                                    );
+
+                            }
+
+                            if (
+                                pending[code] &&
+                                pending[code]
+                                    .expires > Date.now()
+                            ) {
+
+                                linked[
+                                    pending[code].discordId
+                                ] = {
+
+                                    playerName:
+                                        playerName,
+
+                                    steamID:
+                                        steamIDs[playerName] || null,
+
+                                    verified: true,
+
+                                    verifiedAt:
+                                        new Date()
+                                            .toISOString()
+
+                                };
+
+                                fs.writeFileSync(
                                     linkedAccountsPath,
-                                    'utf8'
-                                ) || '{}'
-                            );
+                                    JSON.stringify(
+                                        linked,
+                                        null,
+                                        2
+                                    )
+                                );
 
-                    }
+                                delete pending[code];
 
-                    if (
-                        pending[code] &&
-                        pending[code]
-                        .expires > Date.now()
-                    ) {
+                                fs.writeFileSync(
+                                    pendingVerifications,
+                                    JSON.stringify(
+                                        pending,
+                                        null,
+                                        2
+                                    )
+                                );
 
-                        linked[
-                             pending[code].discordId
-                        ] = {
+                                console.log(
+                                    `✅ ${playerName} verificado correctamente`
+                                );
 
-                            playerName:
-                               playerName,
+                                try {
 
-                            steamID:
-                            steamIDs[playerName] || null,
+                                    const guild =
+                                        client.guilds.cache.first();
 
-                            verified: true,
+                                    const generalChannel =
+                                        guild.channels.cache.get(
+                                            '1490290252521275597'
+                                        );
 
-                            verifiedAt:
-                                new Date()
-                                .toISOString()
-
-};
-
-                        fs.writeFileSync(
-                            linkedAccountsPath,
-                            JSON.stringify(
-                                linked,
-                                null,
-                                2
-                            )
-                        );
-
-                        delete pending[code];
-
-                        fs.writeFileSync(
-                            pendingVerifications,
-                            JSON.stringify(
-                                pending,
-                                null,
-                                2
-                            )
-                        );
-
-                        console.log(
-`✅ ${playerName} verificado correctamente`
-                        );
-                        
-                        try {
-
-    const guild =
-        client.guilds.cache.first();
-
-    const generalChannel =
-        guild.channels.cache.get(
-            '1490290252521275597'
-        );
-
-    const embed =
-        new EmbedBuilder()
-        .setColor('#00ff88')
-        .setTitle('✅ NUEVO SUPERVIVIENTE VERIFICADO')
-        .setDescription(
-`📢 Antonio Recio informa:
+                                    const embed =
+                                        new EmbedBuilder()
+                                            .setColor('#00ff88')
+                                            .setTitle('✅ NUEVO SUPERVIVIENTE VERIFICADO')
+                                            .setDescription(
+                                                `📢 Antonio Recio informa:
 
 **${playerName}**
 ya forma parte oficialmente de MontepinarZ 😭🔥
@@ -345,313 +345,324 @@ Este individuo ya puede:
 🏆 competir en rankings
 
 Espero que no robe cobre del vecindario.`
-        )
-        .setTimestamp();
+                                            )
+                                            .setTimestamp();
 
-    if (generalChannel) {
+                                    if (generalChannel) {
 
-        generalChannel.send({
-            embeds: [embed]
-        });
+                                        generalChannel.send({
+                                            embeds: [embed]
+                                        });
 
-    }
+                                    }
 
-} catch (err) {
+                                } catch (err) {
 
-    console.log(
-'❌ Error enviando mensaje verify'
-    );
+                                    console.log(
+                                        '❌ Error enviando mensaje verify'
+                                    );
 
-}
+                                }
 
-                    } else {
+                            } else {
 
-                        console.log(
-`❌ Código inválido para ${playerName}`
-                        );
+                                console.log(
+                                    `❌ Código inválido para ${playerName}`
+                                );
 
-                    }
+                            }
 
-                }
-
-                // =========================
-                // ONLINE
-                // =========================
-
-                const onlineMatch =
-                    line.match(
-/Players:\s(\d+)\sin total/
-                    );
-
-                if (onlineMatch) {
-
-                    currentOnline =
-                        parseInt(
-                            onlineMatch[1]
-                        );
-
-                    fs.writeFileSync(
-                        './online.json',
-                        JSON.stringify(
-                            {
-                                online:
-                                    currentOnline
-                            },
-                            null,
-                            2
-                        )
-                    );
-
-                    console.log(
-`👥 ONLINE REAL: ${currentOnline}`
-                    );
-
-                }
-
-                // =========================
-                // JOIN
-                // =========================
-
-                if (
-                    line.includes(
-                        'BattlEye Server: Player'
-                    ) &&
-                    line.includes(
-                        'connected'
-                    )
-                ) {
-
-                    console.log(line);
-
-                    const match =
-                        line.match(
-/Player #\d+ (.+?) \(.+?\) connected/
-                        );
-
-                    if (match) {
-
-                        const name =
-                            match[1];
-
-                        const steamID =
-                            name;
-
-                        if (
-                            playersSeen[
-                                steamID
-                            ]
-                        ) {
-                            continue;
                         }
 
-                        playersSeen[
-                            steamID
-                        ] = true;
+                        // =========================
+                        // ONLINE
+                        // =========================
 
-                        console.log(
-`🟢 ${name} conectado`
-                        );
-
-                        const channel =
-                            await client
-                            .channels
-                            .fetch(
-                                JOIN_CHANNEL_ID
+                        const onlineMatch =
+                            line.match(
+                                /Players:\s(\d+)\sin total/
                             );
 
-                        const embed =
-                            new EmbedBuilder()
-                            .setColor(
-                                '#00ff88'
-                            )
-                            .setTitle(
-'🟢 PLAYER CONNECTED'
-                            )
-                            .setDescription(
-`**${name}** ha entrado al servidor`
-                            )
-                            .setTimestamp();
+                        if (onlineMatch) {
 
-                        channel.send({
-                            embeds: [embed]
-                        });
+                            currentOnline =
+                                parseInt(
+                                    onlineMatch[1]
+                                );
 
-                        const players =
-                            loadPlayers();
+                            if (
+                                currentOnline !==
+                                lastOnline
+                            ) {
+
+                                lastOnline =
+                                    currentOnline;
+
+                                fs.writeFileSync(
+                                    './online.json',
+                                    JSON.stringify(
+                                        {
+                                            online:
+                                                currentOnline
+                                        },
+                                        null,
+                                        2
+                                    )
+                                );
+
+                                console.log(
+                                    `👥 ONLINE REAL ACTUALIZADO: ${currentOnline}`
+                                );
+
+                            }
+
+                        }
+
+                        // =========================
+                        // JOIN
+                        // =========================
 
                         if (
-                            !players[
-                                steamID
-                            ]
+                            line.includes(
+                                'BattlEye Server: Player'
+                            ) &&
+                            line.includes(
+                                'connected'
+                            )
                         ) {
 
-                            players[
-                                steamID
-                            ] = {
+                            console.log(line);
 
-                                name:
+                            const match =
+                                line.match(
+                                    /Player #\d+ (.+?) \(.+?\) connected/
+                                );
+
+                            if (match) {
+
+                                const name =
+                                    match[1];
+
+                                const steamID =
+                                    name;
+
+                                if (
+                                    playersSeen[
+                                    steamID
+                                    ]
+                                ) {
+                                    continue;
+                                }
+
+                                playersSeen[
+                                    steamID
+                                ] = true;
+
+
+                                console.log(
+                                    `🟢 ${name} conectado`
+                                );
+
+                                const channel =
+                                    await client
+                                        .channels
+                                        .fetch(
+                                            JOIN_CHANNEL_ID
+                                        );
+
+                                const embed =
+                                    new EmbedBuilder()
+                                        .setColor(
+                                            '#00ff88'
+                                        )
+                                        .setTitle(
+                                            '🟢 PLAYER CONNECTED'
+                                        )
+                                        .setDescription(
+                                            `**${name}** ha entrado al servidor`
+                                        )
+                                        .setTimestamp();
+
+                                channel.send({
+                                    embeds: [embed]
+                                });
+
+                                const players =
+                                    loadPlayers();
+
+                                if (
+                                    !players[
+                                    steamID
+                                    ]
+                                ) {
+
+                                    players[
+                                        steamID
+                                    ] = {
+
+                                        name:
+                                            name,
+
+                                        joins: 0,
+
+                                        minutesPlayed: 0
+
+                                    };
+
+                                }
+
+                                players[
+                                    steamID
+                                ].name = name;
+
+                                players[
+                                    steamID
+                                ].joins += 1;
+
+                                savePlayers(
+                                    players
+                                );
+
+                                onlinePlayers[
+                                    steamID
+                                ] = {
+
                                     name,
 
-                                joins: 0,
+                                    joinTime:
+                                        Date.now()
 
-                                minutesPlayed: 0
+                                };
 
-                            };
+                            }
 
                         }
 
-                        players[
-                            steamID
-                        ].name = name;
-
-                        players[
-                            steamID
-                        ].joins += 1;
-
-                        savePlayers(
-                            players
-                        );
-
-                        onlinePlayers[
-                            steamID
-                        ] = {
-
-                            name,
-
-                            joinTime:
-                                Date.now()
-
-                        };
-
-                    }
-
-                }
-
-                // =========================
-                // LEAVE
-                // =========================
-
-                if (
-
-                    line.includes(
-                        'BattlEye Server: Player'
-                    ) &&
-
-                    (
-                        line.includes(
-                            'disconnected'
-                        ) ||
-
-                        line.includes(
-                            'kicked'
-                        )
-                    )
-
-                ) {
-
-                    const disconnectMatch =
-                        line.match(
-/Player #\d+ (.+?) disconnected/
-                        );
-
-                    if (disconnectMatch) {
-
-                        const name =
-                            disconnectMatch[1];
-
-                        const steamID =
-                            Object.keys(
-                                onlinePlayers
-                            ).find(
-                                id =>
-                                onlinePlayers[id]
-                                .name === name
-                            );
-
-                        console.log(
-`🔴 ${name} desconectado`
-                        );
-
-                        delete playersSeen[
-                            steamID
-                        ];
-
-                        const channel =
-                            await client
-                            .channels
-                            .fetch(
-                                JOIN_CHANNEL_ID
-                            );
-
-                        const embed =
-                            new EmbedBuilder()
-                            .setColor(
-                                '#ff0000'
-                            )
-                            .setTitle(
-'🔴 PLAYER DISCONNECTED'
-                            )
-                            .setDescription(
-`**${name}** ha salido del servidor`
-                            )
-                            .setTimestamp();
-
-                        channel.send({
-                            embeds: [embed]
-                        });
-
-                        const players =
-                            loadPlayers();
+                        // =========================
+                        // LEAVE
+                        // =========================
 
                         if (
-                            onlinePlayers[
-                                steamID
-                            ] &&
 
-                            players[
-                                steamID
-                            ]
+                            line.includes(
+                                'BattlEye Server: Player'
+                            ) &&
+
+                            (
+                                line.includes(
+                                    'disconnected'
+                                ) ||
+
+                                line.includes(
+                                    'kicked'
+                                )
+                            )
+
                         ) {
 
-                            const sessionMinutes =
-                                (
-                                    Date.now() -
+                            const disconnectMatch =
+                                line.match(
+                                    /Player #\d+ (.+?) disconnected/
+                                );
 
+                            if (disconnectMatch) {
+
+                                const name =
+                                    disconnectMatch[1];
+
+                                const steamID =
+                                    Object.keys(
+                                        onlinePlayers
+                                    ).find(
+                                        id =>
+                                            onlinePlayers[id]
+                                                .name === name
+                                    );
+
+                                console.log(
+                                    `🔴 ${name} desconectado`
+                                );
+
+                                delete playersSeen[
+                                    steamID
+                                ];
+
+                                const channel =
+                                    await client
+                                        .channels
+                                        .fetch(
+                                            JOIN_CHANNEL_ID
+                                        );
+
+                                const embed =
+                                    new EmbedBuilder()
+                                        .setColor(
+                                            '#ff0000'
+                                        )
+                                        .setTitle(
+                                            '🔴 PLAYER DISCONNECTED'
+                                        )
+                                        .setDescription(
+                                            `**${name}** ha salido del servidor`
+                                        )
+                                        .setTimestamp();
+
+                                channel.send({
+                                    embeds: [embed]
+                                });
+
+                                const players =
+                                    loadPlayers();
+
+                                if (
                                     onlinePlayers[
+                                    steamID
+                                    ] &&
+
+                                    players[
+                                    steamID
+                                    ]
+                                ) {
+
+                                    const sessionMinutes =
+                                        (
+                                            Date.now() -
+
+                                            onlinePlayers[
+                                                steamID
+                                            ]
+                                                .joinTime
+
+                                        ) / 60000;
+
+                                    players[
                                         steamID
                                     ]
-                                    .joinTime
+                                        .minutesPlayed +=
+                                        sessionMinutes;
 
-                                ) / 60000;
+                                    savePlayers(
+                                        players
+                                    );
 
-                            players[
-                                steamID
-                            ]
-                            .minutesPlayed +=
-                                sessionMinutes;
+                                    delete onlinePlayers[
+                                        steamID
+                                    ];
 
-                            savePlayers(
-                                players
-                            );
+                                }
 
-                            delete onlinePlayers[
-                                steamID
-                            ];
+                            }
 
                         }
 
                     }
 
-                }
+                    lastSize =
+                        stats.size;
 
-            }
-
-            lastSize =
-                stats.size;
+                });
 
         });
-
-    });
 
 }, 2000);
 
@@ -690,13 +701,13 @@ setInterval(async () => {
     } catch (err) {
 
         console.log(
-'❌ Error Hall Of Fame:',
+            '❌ Error Hall Of Fame:',
             err.message
         );
 
     }
 
-}, 30000); 
+}, 30000);
 
 async function updateHallOfFame() {
 
@@ -704,11 +715,11 @@ async function updateHallOfFame() {
 
     const sortedPlayers =
         Object.values(players)
-        .sort(
-            (a, b) =>
-                b.minutesPlayed -
-                a.minutesPlayed
-        );
+            .sort(
+                (a, b) =>
+                    b.minutesPlayed -
+                    a.minutesPlayed
+            );
 
     if (sortedPlayers.length === 0) {
         return;
@@ -738,58 +749,58 @@ async function updateHallOfFame() {
     top2to5.forEach(
         (player, index) => {
 
-        const hours =
-            (
-                player.minutesPlayed / 60
-            ).toFixed(1);
+            const hours =
+                (
+                    player.minutesPlayed / 60
+                ).toFixed(1);
 
-        topText +=
-`${medals[index]} ${player.name} — ${hours}h\n`;
+            topText +=
+                `${medals[index]} ${player.name} — ${hours}h\n`;
 
-    });
+        });
 
     const embedTop =
         new EmbedBuilder()
-        .setColor('#ffaa00')
-        .setTitle(
-            '🏆 TOP SUPERVIVIENTES'
-        )
-        .setDescription(
-            topText || 'Sin datos'
-        )
-        .setFooter({
-            text:
-'MontepinarZ • Hall Of Fame'
-        })
-        .setTimestamp();
+            .setColor('#ffaa00')
+            .setTitle(
+                '🏆 TOP SUPERVIVIENTES'
+            )
+            .setDescription(
+                topText || 'Sin datos'
+            )
+            .setFooter({
+                text:
+                    'MontepinarZ • Hall Of Fame'
+            })
+            .setTimestamp();
 
     const embedKing =
         new EmbedBuilder()
-        .setColor('#00ff88')
-        .setTitle(
-            '👑 REY DE CHERNARUS'
-        )
-        .setDescription(
-`🔥 ${top1.name}
+            .setColor('#00ff88')
+            .setTitle(
+                '👑 REY DE CHERNARUS'
+            )
+            .setDescription(
+                `🔥 ${top1.name}
 
 ⏳ ${topHours} horas jugadas
 
 “Este ya paga IBI en Chernarus.” 😭`
-        )
-        .setFooter({
-            text:
-'El esfuerzo deja huella'
-        })
-        .setTimestamp();
+            )
+            .setFooter({
+                text:
+                    'El esfuerzo deja huella'
+            })
+            .setTimestamp();
 
     let saved = {};
 
-if (fs.existsSync(hallMessageFile)) {
-    saved = JSON.parse(fs.readFileSync(hallMessageFile, 'utf8') || '{}');
-}
+    if (fs.existsSync(hallMessageFile)) {
+        saved = JSON.parse(fs.readFileSync(hallMessageFile, 'utf8') || '{}');
+    }
 
-// después de enviar/editar mensajes
-fs.writeFileSync(hallMessageFile, JSON.stringify(saved, null, 2));
+    // después de enviar/editar mensajes
+    fs.writeFileSync(hallMessageFile, JSON.stringify(saved, null, 2));
 
     // ====================
     // TOP MESSAGE
@@ -801,10 +812,10 @@ fs.writeFileSync(hallMessageFile, JSON.stringify(saved, null, 2));
 
             const msg =
                 await hallChannel
-                .messages
-                .fetch(
-                    saved.topMessageId
-                );
+                    .messages
+                    .fetch(
+                        saved.topMessageId
+                    );
 
             await msg.edit({
                 embeds: [embedTop]
@@ -844,10 +855,10 @@ fs.writeFileSync(hallMessageFile, JSON.stringify(saved, null, 2));
 
             const msg =
                 await hallChannel
-                .messages
-                .fetch(
-                    saved.kingMessageId
-                );
+                    .messages
+                    .fetch(
+                        saved.kingMessageId
+                    );
 
             await msg.edit({
                 embeds: [embedKing]
