@@ -199,6 +199,9 @@ client.once('clientReady', async () => {
         await client.channels.fetch(CHANNEL_ID);
 
     async function updateTop() {
+        console.log(
+            '🏆 Actualizando Hall Of Fame...'
+        );
 
         let players = {};
 
@@ -236,6 +239,14 @@ client.once('clientReady', async () => {
             topDescription += `${medal} **${player.name}** — ${hours}h\n`;
         });
 
+        // EMBED INFO
+        const infoEmbed =
+            new EmbedBuilder()
+                .setColor('#ffaa00')
+                .setDescription(
+                    '⚡ Hall Of Fame actualizado automáticamente cada 30 segundos'
+                );
+
         // EMBED TOP 2-5
         const topEmbed = new EmbedBuilder()
             .setColor('#ff9900')
@@ -266,11 +277,19 @@ ${randomPhrase}`
 
         // CREAR MENSAJES
         if (!messageId) {
-
+            const msgInfo =
+                await channel.send({
+                    embeds: [infoEmbed]
+                });
             const msgTop = await channel.send({ embeds: [topEmbed] });
             const msgKing = await channel.send({ embeds: [kingEmbed] });
 
-            messageId = { top: msgTop.id, king: msgKing.id };
+            messageId = {
+                info: msgInfo.id,
+                top: msgTop.id,
+                king: msgKing.id
+            };
+
 
             fs.writeFileSync('./messageId.txt', JSON.stringify(messageId, null, 2));
 
@@ -286,6 +305,49 @@ ${randomPhrase}`
 
             if (!ids) return;
 
+            // EDITAR INFO
+            let infoMsg = null;
+
+            try {
+
+                infoMsg =
+                    await channel.messages.fetch(
+                        ids.info
+                    );
+
+            } catch {
+
+                infoMsg = null;
+
+            }
+
+            if (infoMsg) {
+
+                await infoMsg.edit({
+                    embeds: [infoEmbed]
+                });
+
+            } else {
+
+                const newInfo =
+                    await channel.send({
+                        embeds: [infoEmbed]
+                    });
+
+                ids.info =
+                    newInfo.id;
+
+                fs.writeFileSync(
+                    './messageId.txt',
+                    JSON.stringify(
+                        ids,
+                        null,
+                        2
+                    )
+                );
+
+            }
+
             // EDITAR TOP
             let topMsg = null;
 
@@ -299,7 +361,32 @@ ${randomPhrase}`
                 topMsg = null;
 
             }
-            if (topMsg) await topMsg.edit({ embeds: [topEmbed] });
+            if (topMsg) {
+
+                await topMsg.edit({
+                    embeds: [topEmbed]
+                });
+
+            } else {
+
+                const newTop =
+                    await channel.send({
+                        embeds: [topEmbed]
+                    });
+
+                ids.top =
+                    newTop.id;
+
+                fs.writeFileSync(
+                    './messageId.txt',
+                    JSON.stringify(
+                        ids,
+                        null,
+                        2
+                    )
+                );
+
+            }
 
             // EDITAR REY
             let kingMsg = null;
@@ -314,7 +401,32 @@ ${randomPhrase}`
                 kingMsg = null;
 
             }
-            if (kingMsg) await kingMsg.edit({ embeds: [kingEmbed] });
+            if (kingMsg) {
+
+                await kingMsg.edit({
+                    embeds: [kingEmbed]
+                });
+
+            } else {
+
+                const newKing =
+                    await channel.send({
+                        embeds: [kingEmbed]
+                    });
+
+                ids.king =
+                    newKing.id;
+
+                fs.writeFileSync(
+                    './messageId.txt',
+                    JSON.stringify(
+                        ids,
+                        null,
+                        2
+                    )
+                );
+
+            }
 
         }
     }
