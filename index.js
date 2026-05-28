@@ -494,6 +494,9 @@ client.on(
                     );
 
                 online = data.online || 0;
+                await interaction.reply(
+                    `👥 Jugadores online: ${online}`
+                );
 
             }
 
