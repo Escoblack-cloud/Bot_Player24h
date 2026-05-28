@@ -56,7 +56,7 @@ let lastOnline = -1;
 
 console.log('👀 Leyendo logs...');
 
-client.once('ready', () => {
+client.once('clientReady', () => {
 
     console.log('✅ Discord conectado');
 
