@@ -808,169 +808,87 @@ async function updateHallOfFame() {
         saved = JSON.parse(fs.readFileSync(hallMessageFile, 'utf8') || '{}');
     }
 
-
-    // ====================
+    //  ====================
     // TOP MESSAGE
     // ====================
+    const existingMessages =
+        await hallChannel.messages.fetch({
+            limit: 20
+        });
 
-    try {
+    const existingTop =
+        existingMessages.find(
+            m =>
+                m.author.id ===
+                client.user.id &&
 
-        if (saved.topMessageId) {
+                m.embeds.length > 0 &&
 
-            const msg =
-                await hallChannel
-                    .messages
-                    .fetch(
-                        saved.topMessageId
-                    );
-
-            await msg.edit({
-                embeds: [embedTop]
-            });
-
-        } else {
-
-            const msg =
-                await hallChannel.send({
-                    embeds: [embedTop]
-                });
-
-            saved.topMessageId =
-                msg.id;
-
-        }
-
-    } catch {
-
-        console.log(
-            '⚠️ Recreando TOP message'
+                m.embeds[0]
+                    ?.title ===
+                '🏆 TOP SUPERVIVIENTES'
         );
 
-        const existingMessages =
-            await hallChannel.messages.fetch({
-                limit: 10
-            });
+    if (existingTop) {
 
-        const existingTop =
-            existingMessages.find(
-                m =>
-                    m.author.id ===
-                    client.user.id &&
+        saved.topMessageId =
+            existingTop.id;
 
-                    m.embeds.length > 0 &&
+        await existingTop.edit({
+            embeds: [embedTop]
+        });
 
-                    m.embeds[0]
-                        ?.title ===
-                    '🏆 TOP SUPERVIVIENTES'
-            );
+    } else {
 
-        if (existingTop) {
-
-            saved.topMessageId =
-                existingTop.id;
-
-            await existingTop.edit({
+        const msg =
+            await hallChannel.send({
                 embeds: [embedTop]
             });
 
-        } else {
+        saved.topMessageId =
+            msg.id;
 
-            const msg =
-                await hallChannel.send({
-                    embeds: [embedTop]
-                });
-
-            saved.topMessageId =
-                msg.id;
-
-        }
     }
-
     // ====================
     // KING MESSAGE
     // ====================
 
-    try {
+    const existingKingMessages =
+        await hallChannel.messages.fetch({
+            limit: 20
+        });
 
-        if (saved.kingMessageId) {
+    const existingKing =
+        existingKingMessages.find(
+            m =>
+                m.author.id ===
+                client.user.id &&
 
-            const msg =
-                await hallChannel
-                    .messages
-                    .fetch(
-                        saved.kingMessageId
-                    );
+                m.embeds.length > 0 &&
 
-            await msg.edit({
-                embeds: [embedKing]
-            });
-
-        } else {
-
-            const msg =
-                await hallChannel.send({
-                    embeds: [embedKing]
-                });
-
-            saved.kingMessageId =
-                msg.id;
-
-        }
-
-    } catch {
-
-        console.log(
-            '⚠️ Recreando KING message'
+                m.embeds[0]
+                    ?.title ===
+                '👑 REY DE CHERNARUS'
         );
 
-        const existingMessages =
-            await hallChannel.messages.fetch({
-                limit: 10
-            });
+    if (existingKing) {
 
-        const existingKing =
-            existingMessages.find(
-                m =>
-                    m.author.id ===
-                    client.user.id &&
+        saved.kingMessageId =
+            existingKing.id;
 
-                    m.embeds.length > 0 &&
+        await existingKing.edit({
+            embeds: [embedKing]
+        });
 
-                    m.embeds[0]
-                        ?.title ===
-                    '👑 REY DE CHERNARUS'
-            );
+    } else {
 
-        if (existingKing) {
-
-            saved.kingMessageId =
-                existingKing.id;
-
-            await existingKing.edit({
+        const msg =
+            await hallChannel.send({
                 embeds: [embedKing]
             });
 
-        } else {
-
-            const msg =
-                await hallChannel.send({
-                    embeds: [embedKing]
-                });
-
-            saved.kingMessageId =
-                msg.id;
-
-        }
+        saved.kingMessageId =
+            msg.id;
 
     }
-
-    fs.writeFileSync(
-        hallMessageFile,
-        JSON.stringify(
-            saved,
-            null,
-            2
-        )
-    );
-
 }
