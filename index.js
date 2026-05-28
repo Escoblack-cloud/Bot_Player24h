@@ -780,4 +780,37 @@ y pégalo en el chat global de DayZ 😭🔥
 
 );
 
+client.on(
+    'guildMemberAdd',
+    async member => {
+
+        try {
+
+            const role =
+                member.guild.roles.cache.get(
+                    '1509583483289210921'
+                );
+
+            if (role) {
+
+                await member.roles.add(role);
+
+                console.log(
+                    `🛑 Rol Sin Verificar dado a ${member.user.tag}`
+                );
+
+            }
+
+        } catch (err) {
+
+            console.log(
+                '❌ Error dando rol:',
+                err
+            );
+
+        }
+
+    }
+);
+
 client.login(process.env.TOKEN);
