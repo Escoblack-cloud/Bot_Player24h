@@ -165,6 +165,19 @@ client.once('ready', async () => {
 
         await rest.put(
             Routes.applicationCommands(client.user.id),
+            { body: [] }
+        );
+
+        console.log(
+            '🧹 Comandos antiguos eliminados'
+        );
+
+        await new Promise(resolve =>
+            setTimeout(resolve, 5000)
+        );
+
+        await rest.put(
+            Routes.applicationCommands(client.user.id),
             { body: commands }
         );
 
