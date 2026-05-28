@@ -10,6 +10,8 @@ const {
 
 const fs = require('fs');
 
+const hallMessageFile = './hallMessage.json';
+
 const ClientSFTP =
     require('ssh2-sftp-client');
 
@@ -21,6 +23,12 @@ const client = new Client({
 
 const JOIN_CHANNEL_ID =
     '1490712034579316857';
+    
+const HALL_OF_FAME_CHANNEL_ID =
+    process.env.HALL_OF_FAME;
+
+const KOKE_INFORMA_CHANNEL_ID =
+    process.env.KOKE_INFORMA;
 
 const logPath =
     './server_console.log';
@@ -672,3 +680,212 @@ setInterval(() => {
     savePlayers(players);
 
 }, 60000);
+
+setInterval(async () => {
+
+    try {
+
+        await updateHallOfFame();
+
+    } catch (err) {
+
+        console.log(
+'❌ Error Hall Of Fame:',
+            err.message
+        );
+
+    }
+
+}, 30000);
+
+const hallMessageFile = './hallMessage.json'; 
+
+async function updateHallOfFame() {
+
+    const players = loadPlayers();
+
+    const sortedPlayers =
+        Object.values(players)
+        .sort(
+            (a, b) =>
+                b.minutesPlayed -
+                a.minutesPlayed
+        );
+
+    if (sortedPlayers.length === 0) {
+        return;
+    }
+
+    const hallChannel =
+        await client.channels.fetch(
+            HALL_OF_FAME_CHANNEL_ID
+        );
+
+    const top1 =
+        sortedPlayers[0];
+
+    const top2to5 =
+        sortedPlayers.slice(1, 5);
+
+    const topHours =
+        (
+            top1.minutesPlayed / 60
+        ).toFixed(1);
+
+    let topText = '';
+
+    const medals =
+        ['🥈', '🥉', '🏅', '🏅'];
+
+    top2to5.forEach(
+        (player, index) => {
+
+        const hours =
+            (
+                player.minutesPlayed / 60
+            ).toFixed(1);
+
+        topText +=
+`${medals[index]} ${player.name} — ${hours}h\n`;
+
+    });
+
+    const embedTop =
+        new EmbedBuilder()
+        .setColor('#ffaa00')
+        .setTitle(
+            '🏆 TOP SUPERVIVIENTES'
+        )
+        .setDescription(
+            topText || 'Sin datos'
+        )
+        .setFooter({
+            text:
+'MontepinarZ • Hall Of Fame'
+        })
+        .setTimestamp();
+
+    const embedKing =
+        new EmbedBuilder()
+        .setColor('#00ff88')
+        .setTitle(
+            '👑 REY DE CHERNARUS'
+        )
+        .setDescription(
+`🔥 ${top1.name}
+
+⏳ ${topHours} horas jugadas
+
+“Este ya paga IBI en Chernarus.” 😭`
+        )
+        .setFooter({
+            text:
+'El esfuerzo deja huella'
+        })
+        .setTimestamp();
+
+    let saved = {};
+
+if (fs.existsSync(hallMessageFile)) {
+    saved = JSON.parse(fs.readFileSync(hallMessageFile, 'utf8') || '{}');
+}
+
+// después de enviar/editar mensajes
+fs.writeFileSync(hallMessageFile, JSON.stringify(saved, null, 2));
+
+    // ====================
+    // TOP MESSAGE
+    // ====================
+
+    try {
+
+        if (saved.topMessageId) {
+
+            const msg =
+                await hallChannel
+                .messages
+                .fetch(
+                    saved.topMessageId
+                );
+
+            await msg.edit({
+                embeds: [embedTop]
+            });
+
+        } else {
+
+            const msg =
+                await hallChannel.send({
+                    embeds: [embedTop]
+                });
+
+            saved.topMessageId =
+                msg.id;
+
+        }
+
+    } catch {
+
+        const msg =
+            await hallChannel.send({
+                embeds: [embedTop]
+            });
+
+        saved.topMessageId =
+            msg.id;
+
+    }
+
+    // ====================
+    // KING MESSAGE
+    // ====================
+
+    try {
+
+        if (saved.kingMessageId) {
+
+            const msg =
+                await hallChannel
+                .messages
+                .fetch(
+                    saved.kingMessageId
+                );
+
+            await msg.edit({
+                embeds: [embedKing]
+            });
+
+        } else {
+
+            const msg =
+                await hallChannel.send({
+                    embeds: [embedKing]
+                });
+
+            saved.kingMessageId =
+                msg.id;
+
+        }
+
+    } catch {
+
+        const msg =
+            await hallChannel.send({
+                embeds: [embedKing]
+            });
+
+        saved.kingMessageId =
+            msg.id;
+
+    }
+
+    fs.writeFileSync(
+        hallMessageFile,
+        JSON.stringify(
+            saved,
+            null,
+            2
+        )
+    );
+
+}
