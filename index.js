@@ -141,7 +141,15 @@ const commands = [
 
     new SlashCommandBuilder()
         .setName('verificar')
-        .setDescription('Verificar cuenta DayZ')
+        .setDescription('Verificar cuenta DayZ'),
+
+    new SlashCommandBuilder()
+        .setName('testrol')
+        .setDescription('Dar rol Sin Verificar'),
+
+    new SlashCommandBuilder()
+        .setName('quitarrol')
+        .setDescription('Quitar rol Sin Verificar')
 
 ].map(command => command.toJSON());
 
