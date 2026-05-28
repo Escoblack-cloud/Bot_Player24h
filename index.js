@@ -108,41 +108,15 @@ const client = new Client({
     ]
 });
 
-const CHANNEL_ID = '1508926837332508672';
 const GENERAL_CHANNEL_ID = '1490290252521275597';
 const KOKE_CHANNEL_ID = '1509278581094879233';
 const PLAYER_ROLE_ID = '1508481070289649786';
 
-let messageId = null;
+
 let onlineCooldown = false;
 
-if (onlineCooldown) {
 
-    return interaction.reply({
-        content:
-            '⏳ Espera unos segundos antes de volver a usar este comando.',
-        ephemeral: true
-    });
 
-}
-
-onlineCooldown = true;
-
-setTimeout(() => {
-
-    onlineCooldown = false;
-
-}, 15000);
-
-if (fs.existsSync('./messageId.txt')) {
-
-    messageId =
-        fs.readFileSync(
-            './messageId.txt',
-            'utf8'
-        );
-
-}
 
 const commands = [
 
@@ -207,6 +181,9 @@ client.once('clientReady', async () => {
         console.log(
             '⚡ Sentinel commands loaded'
         );
+        setInterval(checkPlayerRoles, 60000);
+
+        setInterval(cleanExpiredCodes, 60000);
 
     } catch (error) {
 
@@ -217,924 +194,662 @@ client.once('clientReady', async () => {
     const channel =
         await client.channels.fetch(CHANNEL_ID);
 
-    async function updateTop() {
-        console.log(
-            '🏆 Actualizando Hall Of Fame...'
-        );
+
+    async function checkPlayerRoles() {
+
+
+        const guild =
+            client.guilds.cache.first();
+
+        if (!guild) return;
+
+        const role =
+            guild.roles.cache.get(
+                PLAYER_ROLE_ID
+            );
+
+        if (!role) return;
 
         let players = {};
 
         if (fs.existsSync('./players.json')) {
-            players = JSON.parse(fs.readFileSync('./players.json', 'utf8'));
+
+            players =
+                JSON.parse(
+                    fs.readFileSync(
+                        './players.json',
+                        'utf8'
+                    )
+                );
+
         }
 
-        const sortedPlayers = Object.values(players).sort((a, b) => b.minutesPlayed - a.minutesPlayed);
+        let milestones = {};
 
-        if (sortedPlayers.length === 0) return;
+        if (fs.existsSync('./milestones.json')) {
 
-        // TOP 1
-        const top1 = sortedPlayers[0];
+            milestones =
+                JSON.parse(
+                    fs.readFileSync(
+                        './milestones.json',
+                        'utf8'
+                    ) || '{}'
+                );
 
-        // TOP 2-5
-        const top2to5 = sortedPlayers.slice(1, 5);
+        }
 
-        // FRASES KOKE
-        const kokePhrases = [
-            `“Este tío ya paga alquiler en NWAF.” 😭🔥`,
-            `“Creo que ya tiene más horas aquí que en la vida real.” 😄🔥`,
-            `“Este notas ya conoce más Chernarus que su barrio.” 🚬🔥`,
-            `“Yo creo que ya respawnea hasta dormido.” 😭🔥`
+        const kokeChannel =
+            guild.channels.cache.get(
+                KOKE_CHANNEL_ID
+            );
+
+        const blockedRoles = [
+            'Admin',
+            'Dev',
+            'Owner',
+            'Staff',
+            'TopGG'
         ];
 
-        const randomPhrase = kokePhrases[Math.floor(Math.random() * kokePhrases.length)];
+        const funnyMessages = {
 
-        // DESCRIPCIÓN TOP 2-5
-        let topDescription = '';
-        const medals = ['🥈', '🥉', '🏅', '🏅'];
+            24:
+                `📢 Antonio Recio informa:\n\n{player} acaba de desbloquear acceso a sugerencias.\n\nEste personaje ya es oficialmente un superviviente de MontepinarZ. 🚬🔥`,
 
-        top2to5.forEach((player, index) => {
-            const medal = medals[index] || '🏅';
-            const hours = (player.minutesPlayed / 60).toFixed(1);
-            topDescription += `${medal} **${player.name}** — ${hours}h\n`;
-        });
+            100:
+                `📢 Amador Rivas comunica:\n\n{player} acaba de alcanzar 100h.\n\nEste tío ya cotiza en Chernarus. 😭🔥`,
 
-        // EMBED INFO
-        const infoEmbed =
-            new EmbedBuilder()
-                .setColor('#ffaa00')
-                .setDescription(
-                    '⚡ Hall Of Fame actualizado automáticamente cada 30 segundos'
-                );
+            250:
+                `📢 Enrique Pastor informa:\n\n{player} ya lleva 250h.\n\nEmpiezo a preocuparme seriamente por su salud mental. ☠️`,
 
-        // EMBED TOP 2-5
-        const topEmbed = new EmbedBuilder()
-            .setColor('#ff9900')
-            .setTitle('🏆 TOP SUPERVIVIENTES')
-            .setDescription(topDescription || 'Todavía no hay jugadores 😄🔥')
-            .setFooter({ text: '🔥 Gracias por apoyar MontepinarZ' })
-            .setTimestamp();
+            500:
+                `📢 Coque Calatrava avisa:\n\n{player} ha llegado a 500h.\n\nCreo que ya duerme dentro de una base militar. 😭🔥`,
 
-        // EMBED REY DE CHERNARUS
-        const kingHours = (top1.minutesPlayed / 60).toFixed(1);
-        const kingEmbed = new EmbedBuilder()
-            .setColor('#ff9900')
-            .setTitle('🥇 EL REY DE CHERNARUS')
-            .setDescription(
-                `━━━━━━━━━━━━━━
+            1000:
+                `📢 Antonio Recio anuncia:\n\n{player} ha alcanzado 1000h.\n\nEste hombre YA ES parte del mapa. 🚬🔥`
 
-👑 **${top1.name}**
-⏳ ${kingHours}h
+        };
 
-━━━━━━━━━━━━━━
+        const milestonesList =
+            [24, 100, 250, 500, 1000];
 
-📢 Koke Calatrava informa:
+        const members =
+            await guild.members.fetch();
 
-${randomPhrase}`
-            )
-            .setFooter({ text: '🔥 Gracias por apoyar MontepinarZ' })
-            .setTimestamp();
+        members.forEach(async member => {
 
-        // CREAR MENSAJES
-        if (!messageId) {
-            const msgInfo =
-                await channel.send({
-                    embeds: [infoEmbed]
-                });
-            const msgTop = await channel.send({ embeds: [topEmbed] });
-            const msgKing = await channel.send({ embeds: [kingEmbed] });
-
-            messageId = {
-                info: msgInfo.id,
-                top: msgTop.id,
-                king: msgKing.id
-            };
-
-
-            fs.writeFileSync('./messageId.txt', JSON.stringify(messageId, null, 2));
-
-        } else {
-
-            let ids = messageId;
-
-            if (typeof ids === 'string') {
-                try {
-                    ids = JSON.parse(fs.readFileSync('./messageId.txt', 'utf8'));
-                } catch { ids = null; }
-            }
-
-            if (!ids) return;
-            let rebuildAll = false;
-
-            // EDITAR INFO
-            infoMsg = null;
-            rebuildAll = true;
-
-            try {
-
-                infoMsg =
-                    await channel.messages.fetch(
-                        ids.info
-                    );
-
-            } catch {
-
-                infoMsg = null;
-
-            }
-
-            if (infoMsg) {
-
-                await infoMsg.edit({
-                    embeds: [infoEmbed]
-                });
-
-            } else {
-
-                const newInfo =
-                    await channel.send({
-                        embeds: [infoEmbed]
-                    });
-
-                ids.info =
-                    newInfo.id;
-
-                fs.writeFileSync(
-                    './messageId.txt',
-                    JSON.stringify(
-                        ids,
-                        null,
-                        2
-                    )
-                );
-
-            }
-
-            // EDITAR TOP
-            let topMsg = null;
-
-            try {
-
-                topMsg =
-                    await channel.messages.fetch(ids.top);
-
-            } catch {
-
-                topMsg = null;
-
-            }
-            if (topMsg) {
-
-                await topMsg.edit({
-                    embeds: [topEmbed]
-                });
-
-            } else {
-
-                const newTop =
-                    await channel.send({
-                        embeds: [topEmbed]
-                    });
-
-                ids.top =
-                    newTop.id;
-
-                fs.writeFileSync(
-                    './messageId.txt',
-                    JSON.stringify(
-                        ids,
-                        null,
-                        2
-                    )
-                );
-
-            }
-
-            if (rebuildAll) {
-
-                const newInfo =
-                    await channel.send({
-                        embeds: [infoEmbed]
-                    });
-
-                const newTop =
-                    await channel.send({
-                        embeds: [topEmbed]
-                    });
-
-                const newKing =
-                    await channel.send({
-                        embeds: [kingEmbed]
-                    });
-
-                ids = {
-
-                    info: newInfo.id,
-                    top: newTop.id,
-                    king: newKing.id
-
-                };
-
-                fs.writeFileSync(
-                    './messageId.txt',
-                    JSON.stringify(
-                        ids,
-                        null,
-                        2
-                    )
-                );
-
-                return;
-
-            }
-
-            // EDITAR REY
-            kingMsg = null;
-            rebuildAll = true;
-
-            try {
-
-                kingMsg =
-                    await channel.messages.fetch(ids.king);
-
-            } catch {
-
-                kingMsg = null;
-
-            }
-            if (kingMsg) {
-
-                await kingMsg.edit({
-                    embeds: [kingEmbed]
-                });
-
-            } else {
-
-                const newKing =
-                    await channel.send({
-                        embeds: [kingEmbed]
-                    });
-
-                ids.king =
-                    newKing.id;
-
-                fs.writeFileSync(
-                    './messageId.txt',
-                    JSON.stringify(
-                        ids,
-                        null,
-                        2
-                    )
-                );
-
-            }
-
-        }
-    }
-
-    updateTop();
-
-    setInterval(updateTop, 30000);
-
-    setInterval(cleanExpiredCodes, 60000);
-
-    setInterval(checkPlayerRoles, 60000);
-
-});
-
-async function checkPlayerRoles() {
-
-    const guild =
-        client.guilds.cache.first();
-
-    if (!guild) return;
-
-    const role =
-        guild.roles.cache.get(
-            PLAYER_ROLE_ID
-        );
-
-    if (!role) return;
-
-    let players = {};
-
-    if (fs.existsSync('./players.json')) {
-
-        players =
-            JSON.parse(
-                fs.readFileSync(
-                    './players.json',
-                    'utf8'
-                )
-            );
-
-    }
-
-    let milestones = {};
-
-    if (fs.existsSync('./milestones.json')) {
-
-        milestones =
-            JSON.parse(
-                fs.readFileSync(
-                    './milestones.json',
-                    'utf8'
-                ) || '{}'
-            );
-
-    }
-
-    const kokeChannel =
-        guild.channels.cache.get(
-            KOKE_CHANNEL_ID
-        );
-
-    const blockedRoles = [
-        'Admin',
-        'Dev',
-        'Owner',
-        'Staff',
-        'TopGG'
-    ];
-
-    const funnyMessages = {
-
-        24:
-            `📢 Antonio Recio informa:\n\n{player} acaba de desbloquear acceso a sugerencias.\n\nEste personaje ya es oficialmente un superviviente de MontepinarZ. 🚬🔥`,
-
-        100:
-            `📢 Amador Rivas comunica:\n\n{player} acaba de alcanzar 100h.\n\nEste tío ya cotiza en Chernarus. 😭🔥`,
-
-        250:
-            `📢 Enrique Pastor informa:\n\n{player} ya lleva 250h.\n\nEmpiezo a preocuparme seriamente por su salud mental. ☠️`,
-
-        500:
-            `📢 Coque Calatrava avisa:\n\n{player} ha llegado a 500h.\n\nCreo que ya duerme dentro de una base militar. 😭🔥`,
-
-        1000:
-            `📢 Antonio Recio anuncia:\n\n{player} ha alcanzado 1000h.\n\nEste hombre YA ES parte del mapa. 🚬🔥`
-
-    };
-
-    const milestonesList =
-        [24, 100, 250, 500, 1000];
-
-    const members =
-        await guild.members.fetch();
-
-    members.forEach(async member => {
-
-        const discordName =
-            member.displayName
-                .toLowerCase()
-                .replace(/[^a-z0-9]/g, '');
-
-        for (const id in players) {
-
-            const player =
-                players[id];
-
-            const playerName =
-                player.name
+            const discordName =
+                member.displayName
                     .toLowerCase()
                     .replace(/[^a-z0-9]/g, '');
 
-            const hours =
-                player.minutesPlayed / 60;
+            for (const id in players) {
 
-            if (
-                discordName === playerName &&
-                hours >= 24
-            ) {
+                const player =
+                    players[id];
 
-                const hasBlockedRole =
-                    member.roles.cache.some(r =>
-                        blockedRoles.includes(
-                            r.name
-                        )
-                    );
+                const playerName =
+                    player.name
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]/g, '');
+
+                const hours =
+                    player.minutesPlayed / 60;
 
                 if (
-                    !member.roles.cache.has(role.id) &&
-                    !hasBlockedRole
+                    discordName === playerName &&
+                    hours >= 24
                 ) {
 
-                    member.roles.add(role)
-                        .then(() => {
+                    const hasBlockedRole =
+                        member.roles.cache.some(r =>
+                            blockedRoles.includes(
+                                r.name
+                            )
+                        );
 
-                            console.log(
-                                `🎖️ Rol dado a ${player.name}`
+                    if (
+                        !member.roles.cache.has(role.id) &&
+                        !hasBlockedRole
+                    ) {
+
+                        member.roles.add(role)
+                            .then(() => {
+
+                                console.log(
+                                    `🎖️ Rol dado a ${player.name}`
+                                );
+
+                            })
+                            .catch(err =>
+                                console.log(err.message)
                             );
 
-                        })
-                        .catch(err =>
-                            console.log(err.message)
+                    }
+
+                    const playerHours =
+                        Math.floor(hours);
+
+                    milestonesList.forEach(async milestone => {
+
+                        const key =
+                            `${player.name}_${milestone}`;
+
+                        if (
+                            playerHours >= milestone &&
+                            !milestones[key]
+                        ) {
+
+                            milestones[key] = true;
+
+                            fs.writeFileSync(
+                                './milestones.json',
+                                JSON.stringify(
+                                    milestones,
+                                    null,
+                                    2
+                                )
+                            );
+
+                            const embed =
+                                new EmbedBuilder()
+                                    .setColor('#ff9900')
+                                    .setTitle('🏆 NUEVO LOGRO')
+                                    .setDescription(
+                                        funnyMessages[
+                                            milestone
+                                        ].replace(
+                                            '{player}',
+                                            player.name
+                                        )
+                                    )
+                                    .setTimestamp();
+
+                            if (kokeChannel) {
+
+                                kokeChannel.send({
+                                    embeds: [embed]
+                                });
+
+                            }
+
+                        }
+
+                    });
+
+                }
+
+            }
+
+        });
+
+    }
+
+    client.on(
+        'interactionCreate',
+        async interaction => {
+
+            if (
+                !interaction.isChatInputCommand()
+            ) return;
+
+            // ONLINE
+            if (
+                interaction.commandName === 'online'
+            ) {
+
+                if (onlineCooldown) {
+
+                    return interaction.reply({
+                        content:
+                            '⏳ Espera unos segundos antes de volver a usar este comando.',
+                        ephemeral: true
+                    });
+
+                }
+
+                onlineCooldown = true;
+
+                setTimeout(() => {
+
+                    onlineCooldown = false;
+
+                }, 15000);
+
+                let online = 0;
+
+                if (fs.existsSync('./online.json')) {
+
+                    const data =
+                        JSON.parse(
+                            fs.readFileSync(
+                                './online.json',
+                                'utf8'
+                            )
+                        );
+
+                    online = data.online || 0;
+
+                }
+
+                const embed =
+                    new EmbedBuilder()
+                        .setColor('#00ff88')
+                        .setTitle('👥 JUGADORES ONLINE')
+                        .setDescription(
+                            `Hay **${online}/40** jugadores conectados`
+                        )
+                        .setTimestamp();
+
+                const onlineFile =
+                    './onlineMessage.json';
+
+                let saved = {};
+
+                if (fs.existsSync(onlineFile)) {
+
+                    saved =
+                        JSON.parse(
+                            fs.readFileSync(
+                                onlineFile,
+                                'utf8'
+                            ) || '{}'
                         );
 
                 }
 
-                const playerHours =
-                    Math.floor(hours);
-
-                milestonesList.forEach(async milestone => {
-
-                    const key =
-                        `${player.name}_${milestone}`;
+                try {
 
                     if (
-                        playerHours >= milestone &&
-                        !milestones[key]
+                        saved.messageId &&
+                        saved.channelId
                     ) {
 
-                        milestones[key] = true;
+                        const oldChannel =
+                            await client.channels.fetch(
+                                saved.channelId
+                            );
 
-                        fs.writeFileSync(
-                            './milestones.json',
-                            JSON.stringify(
-                                milestones,
-                                null,
-                                2
+                        const oldMsg =
+                            await oldChannel.messages.fetch(
+                                saved.messageId
+                            );
+
+                        await oldMsg.delete();
+
+                    }
+                } catch { }
+
+                const newMsg =
+                    await interaction.channel.send({
+                        embeds: [embed]
+                    });
+
+                saved.messageId =
+                    newMsg.id;
+                saved.channelId =
+                    interaction.channel.id;
+
+                fs.writeFileSync(
+                    onlineFile,
+                    JSON.stringify(
+                        saved,
+                        null,
+                        2
+                    )
+
+                );
+
+                return interaction.reply({
+                    content:
+                        '✅ Online actualizado.',
+                    ephemeral: true
+                });
+
+            }
+
+
+            // HORAS
+            if (
+                interaction.commandName === 'horas'
+            ) {
+
+                const nombre =
+                    interaction.options.getString(
+                        'nombre'
+                    );
+
+                let players = {};
+
+                if (fs.existsSync('./players.json')) {
+
+                    players =
+                        JSON.parse(
+                            fs.readFileSync(
+                                './players.json',
+                                'utf8'
                             )
                         );
 
-                        const embed =
-                            new EmbedBuilder()
-                                .setColor('#ff9900')
-                                .setTitle('🏆 NUEVO LOGRO')
-                                .setDescription(
-                                    funnyMessages[
-                                        milestone
-                                    ].replace(
-                                        '{player}',
-                                        player.name
-                                    )
-                                )
-                                .setTimestamp();
+                }
 
-                        if (kokeChannel) {
+                let foundPlayer = null;
 
-                            kokeChannel.send({
-                                embeds: [embed]
+                for (const id in players) {
+
+                    if (
+                        players[id].name
+                            .toLowerCase()
+                            .includes(
+                                nombre.toLowerCase()
+                            )
+                    ) {
+
+                        foundPlayer =
+                            players[id];
+
+                        break;
+
+                    }
+
+                }
+
+                if (!foundPlayer) {
+
+                    return interaction.reply({
+                        content:
+                            '❌ Jugador no encontrado',
+                        ephemeral: true
+                    });
+
+                }
+
+                const hours =
+                    (
+                        foundPlayer.minutesPlayed / 60
+                    ).toFixed(1);
+
+                const embed =
+                    new EmbedBuilder()
+                        .setColor('#ffaa00')
+                        .setTitle('⏳ HORAS JUGADAS')
+                        .setDescription(
+                            `**${foundPlayer.name}** tiene **${hours}h**`
+                        )
+                        .setTimestamp();
+
+                return interaction.reply({
+                    embeds: [embed]
+                });
+
+            }
+            // TESTROL
+            if (
+                interaction.commandName === 'testrol'
+            ) {
+
+                if (
+                    !interaction.member.permissions.has(
+                        'Administrator'
+                    )
+                ) {
+
+                    return interaction.reply({
+                        content:
+                            '❌ No tienes permisos.',
+                        ephemeral: true
+                    });
+
+                }
+                {
+
+                    try {
+
+                        const role =
+                            interaction.guild.roles.cache.get(
+                                '1509583483289210921'
+                            );
+
+                        if (!role) {
+
+                            return interaction.reply({
+                                content:
+                                    '❌ Rol no encontrado.',
+                                ephemeral: true
                             });
 
                         }
 
+                        await interaction.member.roles.add(
+                            role
+                        );
+
+                        return interaction.reply({
+                            content:
+                                '✅ Rol Sin Verificar dado.',
+                            ephemeral: true
+                        });
+
+                    } catch (err) {
+
+                        console.log(err);
+
+                        return interaction.reply({
+                            content:
+                                '❌ Error dando rol.',
+                            ephemeral: true
+                        });
+
                     }
 
-                });
-
-            }
-
-        }
-
-    });
-
-}
-
-client.on(
-    'interactionCreate',
-    async interaction => {
-
-        if (
-            !interaction.isChatInputCommand()
-        ) return;
-
-        // ONLINE
-        if (
-
-            interaction.commandName === 'online'
-        ) {
-
-            let online = 0;
-
-            if (fs.existsSync('./online.json')) {
-
-                const data =
-                    JSON.parse(
-                        fs.readFileSync(
-                            './online.json',
-                            'utf8'
-                        )
-                    );
-
-                online = data.online || 0;
-
-            }
-
-            const embed =
-                new EmbedBuilder()
-                    .setColor('#00ff88')
-                    .setTitle('👥 JUGADORES ONLINE')
-                    .setDescription(
-                        `Hay **${online}/40** jugadores conectados`
-                    )
-                    .setTimestamp();
-
-            const onlineFile =
-                './onlineMessage.json';
-
-            let saved = {};
-
-            if (fs.existsSync(onlineFile)) {
-
-                saved =
-                    JSON.parse(
-                        fs.readFileSync(
-                            onlineFile,
-                            'utf8'
-                        ) || '{}'
-                    );
-
-            }
-
-            try {
-
-                if (
-                    saved.messageId &&
-                    saved.channelId
-                ) {
-
-                    const oldChannel =
-                        await client.channels.fetch(
-                            saved.channelId
-                        );
-
-                    const oldMsg =
-                        await oldChannel.messages.fetch(
-                            saved.messageId
-                        );
-
-                    await oldMsg.delete();
-
                 }
-            } catch { }
-
-            const newMsg =
-                await interaction.channel.send({
-                    embeds: [embed]
-                });
-
-            saved.messageId =
-                newMsg.id;
-            saved.channelId =
-                interaction.channel.id;
-
-            fs.writeFileSync(
-                onlineFile,
-                JSON.stringify(
-                    saved,
-                    null,
-                    2
-                )
-
-            );
-
-            return interaction.reply({
-                content:
-                    '✅ Online actualizado.',
-                ephemeral: true
-            });
-
-        }
-
-
-        // HORAS
-        if (
-            interaction.commandName === 'horas'
-        ) {
-
-            const nombre =
-                interaction.options.getString(
-                    'nombre'
-                );
-
-            let players = {};
-
-            if (fs.existsSync('./players.json')) {
-
-                players =
-                    JSON.parse(
-                        fs.readFileSync(
-                            './players.json',
-                            'utf8'
-                        )
-                    );
-
             }
-
-            let foundPlayer = null;
-
-            for (const id in players) {
-
-                if (
-                    players[id].name
-                        .toLowerCase()
-                        .includes(
-                            nombre.toLowerCase()
-                        )
-                ) {
-
-                    foundPlayer =
-                        players[id];
-
-                    break;
-
-                }
-
-            }
-
-            if (!foundPlayer) {
-
-                return interaction.reply({
-                    content:
-                        '❌ Jugador no encontrado',
-                    ephemeral: true
-                });
-
-            }
-
-            const hours =
-                (
-                    foundPlayer.minutesPlayed / 60
-                ).toFixed(1);
-
-            const embed =
-                new EmbedBuilder()
-                    .setColor('#ffaa00')
-                    .setTitle('⏳ HORAS JUGADAS')
-                    .setDescription(
-                        `**${foundPlayer.name}** tiene **${hours}h**`
-                    )
-                    .setTimestamp();
-
-            return interaction.reply({
-                embeds: [embed]
-            });
-
-        }
-        // TESTROL
-        if (
-            interaction.commandName === 'testrol'
-        )
+            // QUITARROL
             if (
-                !interaction.member.permissions.has(
-                    'Administrator'
-                )
+                interaction.commandName === 'quitarrol'
             ) {
 
-                return interaction.reply({
-                    content:
-                        '❌ No tienes permisos.',
-                    ephemeral: true
-                });
-
-            }
-        {
-
-            try {
-
-                const role =
-                    interaction.guild.roles.cache.get(
-                        '1509583483289210921'
-                    );
-
-                if (!role) {
+                if (
+                    !interaction.member.permissions.has(
+                        'Administrator'
+                    )
+                ) {
 
                     return interaction.reply({
                         content:
-                            '❌ Rol no encontrado.',
+                            '❌ No tienes permisos.',
                         ephemeral: true
                     });
 
                 }
+                {
 
-                await interaction.member.roles.add(
-                    role
-                );
+                    try {
 
-                return interaction.reply({
-                    content:
-                        '✅ Rol Sin Verificar dado.',
-                    ephemeral: true
-                });
+                        const role =
+                            interaction.guild.roles.cache.get(
+                                '1509583483289210921'
+                            );
 
-            } catch (err) {
+                        if (!role) {
 
-                console.log(err);
+                            return interaction.reply({
+                                content:
+                                    '❌ Rol no encontrado.',
+                                ephemeral: true
+                            });
 
-                return interaction.reply({
-                    content:
-                        '❌ Error dando rol.',
-                    ephemeral: true
-                });
+                        }
 
+                        await interaction.member.roles.remove(
+                            role
+                        );
+
+                        return interaction.reply({
+                            content:
+                                '✅ Rol Sin Verificar quitado.',
+                            ephemeral: true
+                        });
+
+                    } catch (err) {
+
+                        console.log(err);
+
+                        return interaction.reply({
+                            content:
+                                '❌ Error quitando rol.',
+                            ephemeral: true
+                        });
+
+                    }
+
+                }
             }
 
-        }
-
-        // QUITARROL
-        if (
-            interaction.commandName === 'quitarrol'
-        )
+            // VERIFICAR
             if (
-                !interaction.member.permissions.has(
-                    'Administrator'
-                )
+                interaction.commandName === 'verificar'
             ) {
 
-                return interaction.reply({
-                    content:
-                        '❌ No tienes permisos.',
-                    ephemeral: true
-                });
+                let linkedAccounts = {};
 
-            }
-        {
+                if (
+                    fs.existsSync(
+                        './linkedAccounts.json'
+                    )
+                ) {
 
-            try {
-
-                const role =
-                    interaction.guild.roles.cache.get(
-                        '1509583483289210921'
-                    );
-
-                if (!role) {
-
-                    return interaction.reply({
-                        content:
-                            '❌ Rol no encontrado.',
-                        ephemeral: true
-                    });
+                    linkedAccounts =
+                        JSON.parse(
+                            fs.readFileSync(
+                                './linkedAccounts.json',
+                                'utf8'
+                            ) || '{}'
+                        );
 
                 }
 
-                await interaction.member.roles.remove(
-                    role
-                );
+                if (
+                    linkedAccounts[
+                    interaction.user.id
+                    ]
+                ) {
 
-                return interaction.reply({
-                    content:
-                        '✅ Rol Sin Verificar quitado.',
-                    ephemeral: true
-                });
+                    return interaction.reply({
 
-            } catch (err) {
+                        embeds: [
 
-                console.log(err);
-
-                return interaction.reply({
-                    content:
-                        '❌ Error quitando rol.',
-                    ephemeral: true
-                });
-
-            }
-
-        }
-
-        // VERIFICAR
-        if (
-            interaction.commandName === 'verificar'
-        ) {
-
-            let linkedAccounts = {};
-
-            if (
-                fs.existsSync(
-                    './linkedAccounts.json'
-                )
-            ) {
-
-                linkedAccounts =
-                    JSON.parse(
-                        fs.readFileSync(
-                            './linkedAccounts.json',
-                            'utf8'
-                        ) || '{}'
-                    );
-
-            }
-
-            if (
-                linkedAccounts[
-                interaction.user.id
-                ]
-            ) {
-
-                return interaction.reply({
-
-                    embeds: [
-
-                        new EmbedBuilder()
-                            .setColor('#ff9900')
-                            .setTitle('✅ YA VERIFICADO')
-                            .setDescription(
-                                `📢 Antonio Recio informa:
+                            new EmbedBuilder()
+                                .setColor('#ff9900')
+                                .setTitle('✅ YA VERIFICADO')
+                                .setDescription(
+                                    `📢 Antonio Recio informa:
 
 Tú ya estás verificado máquina 😭🔥
 
 No intentes hacer trampas que aquí no somos amateurs. 🚬`
-                            )
+                                )
 
-                    ],
+                        ],
 
-                    ephemeral: true
+                        ephemeral: true
 
-                });
-
-            }
-
-            let pending = {};
-
-            if (
-                fs.existsSync(
-                    './pendingVerifications.json'
-                )
-            ) {
-
-                pending =
-                    JSON.parse(
-                        fs.readFileSync(
-                            './pendingVerifications.json',
-                            'utf8'
-                        ) || '{}'
-                    );
-
-            }
-
-            for (const code in pending) {
-
-                if (
-                    pending[code].expires <
-                    Date.now()
-                ) {
-
-                    delete pending[code];
+                    });
 
                 }
 
-            }
+                let pending = {};
 
-            fs.writeFileSync(
-                './pendingVerifications.json',
-                JSON.stringify(
-                    pending,
-                    null,
-                    2
-                )
-            );
+                if (
+                    fs.existsSync(
+                        './pendingVerifications.json'
+                    )
+                ) {
 
-            const alreadyPending =
-                Object.values(pending)
-                    .find(v =>
-                        v.discordId ===
-                        interaction.user.id
-                    );
+                    pending =
+                        JSON.parse(
+                            fs.readFileSync(
+                                './pendingVerifications.json',
+                                'utf8'
+                            ) || '{}'
+                        );
 
-            if (alreadyPending) {
+                }
 
-                return interaction.reply({
+                for (const code in pending) {
 
-                    content:
-                        '❌ Ya tienes una verificación pendiente.',
+                    if (
+                        pending[code].expires <
+                        Date.now()
+                    ) {
 
-                    ephemeral: true
+                        delete pending[code];
 
-                });
+                    }
 
-            }
+                }
 
-            const code =
-                crypto.randomBytes(2)
-                    .toString('hex')
-                    .toUpperCase();
+                fs.writeFileSync(
+                    './pendingVerifications.json',
+                    JSON.stringify(
+                        pending,
+                        null,
+                        2
+                    )
+                );
 
-            pending[code] = {
+                const alreadyPending =
+                    Object.values(pending)
+                        .find(v =>
+                            v.discordId ===
+                            interaction.user.id
+                        );
 
-                discordId:
-                    interaction.user.id,
+                if (alreadyPending) {
 
-                expires:
-                    Date.now() +
-                    (10 * 60 * 1000)
+                    return interaction.reply({
 
-            };
+                        content:
+                            '❌ Ya tienes una verificación pendiente.',
 
-            fs.writeFileSync(
-                './pendingVerifications.json',
-                JSON.stringify(
-                    pending,
-                    null,
-                    2
-                )
-            );
+                        ephemeral: true
 
-            const embed =
-                new EmbedBuilder()
-                    .setColor('#00ff88')
-                    .setTitle('🔐 VERIFICACIÓN DAYZ')
-                    .setDescription(
+                    });
 
-                        `📢 Antonio Recio informa:
+                }
+
+                const code =
+                    crypto.randomBytes(2)
+                        .toString('hex')
+                        .toUpperCase();
+
+                pending[code] = {
+
+                    discordId:
+                        interaction.user.id,
+
+                    expires:
+                        Date.now() +
+                        (10 * 60 * 1000)
+
+                };
+
+                fs.writeFileSync(
+                    './pendingVerifications.json',
+                    JSON.stringify(
+                        pending,
+                        null,
+                        2
+                    )
+                );
+
+                const embed =
+                    new EmbedBuilder()
+                        .setColor('#00ff88')
+                        .setTitle('🔐 VERIFICACIÓN DAYZ')
+                        .setDescription(
+
+                            `📢 Antonio Recio informa:
 
 Para verificar tu cuenta,
 COPIA exactamente este comando
@@ -1147,50 +862,51 @@ y pégalo en el chat global de DayZ 😭🔥
 ━━━━━━━━━━━━━━
 
 ⏰ El código expira en 10 minutos.`
-                    )
-                    .setTimestamp();
+                        )
+                        .setTimestamp();
 
-            return interaction.reply({
-                embeds: [embed],
-                ephemeral: true
-            });
+                return interaction.reply({
+                    embeds: [embed],
+                    ephemeral: true
+                });
 
+            }
         }
-    }
 
-);
+    );
 
-client.on(
-    'guildMemberAdd',
-    async member => {
+    client.on(
+        'guildMemberAdd',
+        async member => {
 
-        try {
+            try {
 
-            const role =
-                member.guild.roles.cache.get(
-                    '1509583483289210921'
-                );
+                const role =
+                    member.guild.roles.cache.get(
+                        '1509583483289210921'
+                    );
 
-            if (role) {
+                if (role) {
 
-                await member.roles.add(role);
+                    await member.roles.add(role);
+
+                    console.log(
+                        `🛑 Rol Sin Verificar dado a ${member.user.tag}`
+                    );
+
+                }
+
+            } catch (err) {
 
                 console.log(
-                    `🛑 Rol Sin Verificar dado a ${member.user.tag}`
+                    '❌ Error dando rol:',
+                    err
                 );
 
             }
 
-        } catch (err) {
-
-            console.log(
-                '❌ Error dando rol:',
-                err
-            );
-
         }
+    );
 
-    }
-);
-
-client.login(process.env.TOKEN);
+    // client.login(process.env.TOKEN);
+});
