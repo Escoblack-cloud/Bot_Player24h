@@ -112,6 +112,7 @@ const KOKE_CHANNEL_ID = '1509278581094879233';
 const PLAYER_ROLE_ID = '1508481070289649786';
 
 let messageId = null;
+let onlineMessageId = null;
 
 if (fs.existsSync('./messageId.txt')) {
 
@@ -522,8 +523,66 @@ client.on(
 
         // ONLINE
         if (
+
             interaction.commandName === 'online'
         ) {
+
+            let online = 0;
+
+            if (fs.existsSync('./online.json')) {
+
+                const data =
+                    JSON.parse(
+                        fs.readFileSync(
+                            './online.json',
+                            'utf8'
+                        )
+                    );
+
+                online = data.online || 0;
+
+            }
+
+            const embed =
+                new EmbedBuilder()
+                    .setColor('#00ff88')
+                    .setTitle('👥 JUGADORES ONLINE')
+                    .setDescription(
+                        `Hay **${online}/40** jugadores conectados`
+                    )
+                    .setTimestamp();
+
+            try {
+
+                if (onlineMessageId) {
+
+                    const oldMsg =
+                        await interaction.channel.messages.fetch(
+                            onlineMessageId
+                        );
+
+                    await oldMsg.delete();
+
+                }
+
+            } catch { }
+
+            const newMsg =
+                await interaction.channel.send({
+                    embeds: [embed]
+                });
+
+            onlineMessageId =
+                newMsg.id;
+
+            return interaction.reply({
+                content:
+                    '✅ Online actualizado.',
+                ephemeral: true
+            });
+
+        }
+        {
 
             let online = 0;
 
