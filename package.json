@@ -8,6 +8,7 @@
   "dependencies": {
     "discord.js": "^14.15.3",
     "dotenv": "^16.4.5",
+    "express": "^5.2.1",
     "ssh2-sftp-client": "^12.1.1"
   }
 }
