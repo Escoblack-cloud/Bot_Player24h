@@ -112,7 +112,6 @@ const KOKE_CHANNEL_ID = '1509278581094879233';
 const PLAYER_ROLE_ID = '1508481070289649786';
 
 let messageId = null;
-let onlineMessageId = null;
 
 if (fs.existsSync('./messageId.txt')) {
 
@@ -552,13 +551,30 @@ client.on(
                     )
                     .setTimestamp();
 
+            const onlineFile =
+                './onlineMessage.json';
+
+            let saved = {};
+
+            if (fs.existsSync(onlineFile)) {
+
+                saved =
+                    JSON.parse(
+                        fs.readFileSync(
+                            onlineFile,
+                            'utf8'
+                        ) || '{}'
+                    );
+
+            }
+
             try {
 
-                if (onlineMessageId) {
+                if (saved.messageId) {
 
                     const oldMsg =
                         await interaction.channel.messages.fetch(
-                            onlineMessageId
+                            saved.messageId
                         );
 
                     await oldMsg.delete();
