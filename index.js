@@ -9,6 +9,29 @@ app.listen(process.env.PORT || 3000, () => {
     console.log('🌐 Web server fake iniciado');
 });
 require('dotenv').config();
+process.on(
+    'unhandledRejection',
+    err => {
+
+        console.log(
+            '❌ UNHANDLED REJECTION',
+            err
+        );
+
+    }
+);
+
+process.on(
+    'uncaughtException',
+    err => {
+
+        console.log(
+            '❌ UNCAUGHT EXCEPTION',
+            err
+        );
+
+    }
+);
 require('./logReader');
 
 const {
@@ -774,5 +797,37 @@ y pégalo en el chat global de DayZ 😭🔥
     }
 
 );
+client.on(
+    'disconnect',
+    () => {
 
+        console.log(
+            '⚠️ Discord desconectado'
+        );
+
+    }
+);
+
+client.on(
+    'reconnecting',
+    () => {
+
+        console.log(
+            '🔄 Reconectando Discord...'
+        );
+
+    }
+);
+
+client.on(
+    'error',
+    err => {
+
+        console.log(
+            '❌ Discord error:',
+            err
+        );
+
+    }
+);
 client.login(process.env.TOKEN);
