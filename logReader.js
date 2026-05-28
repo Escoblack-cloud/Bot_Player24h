@@ -841,13 +841,92 @@ async function updateHallOfFame() {
 
     } catch {
 
-        const msg =
-            await hallChannel.send({
+        console.log(
+            '⚠️ Recreando TOP message'
+        );
+
+        const existingMessages =
+            await hallChannel.messages.fetch({
+                limit: 10
+            });
+
+        const existingTop =
+            existingMessages.find(
+                m =>
+                    m.author.id ===
+                    client.user.id &&
+
+                    m.embeds.length > 0 &&
+
+                    m.embeds[0]
+                        ?.title ===
+                    '🏆 TOP SUPERVIVIENTES'
+            );
+
+        if (existingTop) {
+
+            saved.topMessageId =
+                existingTop.id;
+
+            await existingTop.edit({
                 embeds: [embedTop]
             });
 
-        saved.topMessageId =
-            msg.id;
+        } else {
+
+            const msg =
+                await hallChannel.send({
+                    embeds: [embedTop]
+                });
+
+            saved.topMessageId =
+                msg.id;
+
+        }
+    } catch {
+
+        console.log(
+            '⚠️ Recreando KING message'
+        );
+
+        const existingMessages =
+            await hallChannel.messages.fetch({
+                limit: 10
+            });
+
+        const existingKing =
+            existingMessages.find(
+                m =>
+                    m.author.id ===
+                    client.user.id &&
+
+                    m.embeds.length > 0 &&
+
+                    m.embeds[0]
+                        ?.title ===
+                    '👑 REY DE CHERNARUS'
+            );
+
+        if (existingKing) {
+
+            saved.kingMessageId =
+                existingKing.id;
+
+            await existingKing.edit({
+                embeds: [embedKing]
+            });
+
+        } else {
+
+            const msg =
+                await hallChannel.send({
+                    embeds: [embedKing]
+                });
+
+            saved.kingMessageId =
+                msg.id;
+
+        }
 
     }
 
