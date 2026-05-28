@@ -918,23 +918,47 @@ async function updateHallOfFame() {
 
     } catch {
 
-        const msg =
-            await hallChannel.send({
+        console.log(
+            '⚠️ Recreando KING message'
+        );
+
+        const existingMessages =
+            await hallChannel.messages.fetch({
+                limit: 10
+            });
+
+        const existingKing =
+            existingMessages.find(
+                m =>
+                    m.author.id ===
+                    client.user.id &&
+
+                    m.embeds.length > 0 &&
+
+                    m.embeds[0]
+                        ?.title ===
+                    '👑 REY DE CHERNARUS'
+            );
+
+        if (existingKing) {
+
+            saved.kingMessageId =
+                existingKing.id;
+
+            await existingKing.edit({
                 embeds: [embedKing]
             });
 
-        saved.kingMessageId =
-            msg.id;
+        } else {
+
+            const msg =
+                await hallChannel.send({
+                    embeds: [embedKing]
+                });
+
+            saved.kingMessageId =
+                msg.id;
+
+        }
 
     }
-
-    fs.writeFileSync(
-        hallMessageFile,
-        JSON.stringify(
-            saved,
-            null,
-            2
-        )
-    );
-
-}
