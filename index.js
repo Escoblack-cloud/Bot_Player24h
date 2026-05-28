@@ -155,704 +155,707 @@ const rest =
 client.once('clientReady', async () => {
 
     console.log(
-    '🛡️ Sentinel online | BlackForge Systems'
-);
-
-try {
-
-    await rest.put(
-        cationCommands(client.user.id),
-        { body: [] }
-    ); Routes.appli
-
-    console.log(
-        '🧹 Comandos antiguos eliminados'
+        '🛡️ Sentinel online | BlackForge Systems'
     );
 
-    await new Promise(resolve =>
-        setTimeout(resolve, 5000)
-    );
+    try {
 
-    await rest.put(
-        Routes.applicationGuildCommands(
-            client.user.id,
-            GUILD_ID
-        ),
-        { body: commands }
-    );
+        await rest.put(
+            cationCommands(client.user.id),
+            { body: [] }
+        ); Routes.appli
 
-    console.log(
-        '⚡ Sentinel commands loaded'
-    );
-    setInterval(checkPlayerRoles, 60000);
-
-    setInterval(cleanExpiredCodes, 60000);
-
-} catch (error) {
-
-    console.log(error);
-
-}
-
-const channel =
-    await client.channels.fetch(CHANNEL_ID);
-
-
-async function checkPlayerRoles() {
-
-
-    const guild =
-        client.guilds.cache.first();
-
-    if (!guild) return;
-
-    const role =
-        guild.roles.cache.get(
-            PLAYER_ROLE_ID
+        console.log(
+            '🧹 Comandos antiguos eliminados'
         );
 
-    if (!role) return;
+        await new Promise(resolve =>
+            setTimeout(resolve, 5000)
+        );
 
-    let players = {};
+        await rest.put(
+            Routes.applicationGuildCommands(
+                client.user.id,
+                GUILD_ID
+            ),
+            { body: commands }
+        );
 
-    if (fs.existsSync('./players.json')) {
+        console.log(
+            '⚡ Sentinel commands loaded'
+        );
+        setInterval(checkPlayerRoles, 60000);
 
-        players =
-            JSON.parse(
-                fs.readFileSync(
-                    './players.json',
-                    'utf8'
-                )
-            );
+        setInterval(cleanExpiredCodes, 60000);
+
+    } catch (error) {
+
+        console.log(error);
 
     }
 
-    let milestones = {};
+    const channel =
+        await client.channels.fetch(CHANNEL_ID);
 
-    if (fs.existsSync('./milestones.json')) {
 
-        milestones =
-            JSON.parse(
-                fs.readFileSync(
-                    './milestones.json',
-                    'utf8'
-                ) || '{}'
+    async function checkPlayerRoles() {
+
+
+        const guild =
+            client.guilds.cache.first();
+
+        if (!guild) return;
+
+        const role =
+            guild.roles.cache.get(
+                PLAYER_ROLE_ID
             );
 
-    }
+        if (!role) return;
 
-    const kokeChannel =
-        guild.channels.cache.get(
-            KOKE_CHANNEL_ID
-        );
+        let players = {};
 
-    const blockedRoles = [
-        'Admin',
-        'Dev',
-        'Owner',
-        'Staff',
-        'TopGG'
-    ];
+        if (fs.existsSync('./players.json')) {
 
-    const funnyMessages = {
+            players =
+                JSON.parse(
+                    fs.readFileSync(
+                        './players.json',
+                        'utf8'
+                    )
+                );
 
-        24:
-            `📢 Antonio Recio informa:\n\n{player} acaba de desbloquear acceso a sugerencias.\n\nEste personaje ya es oficialmente un superviviente de MontepinarZ. 🚬🔥`,
+        }
 
-        100:
-            `📢 Amador Rivas comunica:\n\n{player} acaba de alcanzar 100h.\n\nEste tío ya cotiza en Chernarus. 😭🔥`,
+        let milestones = {};
 
-        250:
-            `📢 Enrique Pastor informa:\n\n{player} ya lleva 250h.\n\nEmpiezo a preocuparme seriamente por su salud mental. ☠️`,
+        if (fs.existsSync('./milestones.json')) {
 
-        500:
-            `📢 Coque Calatrava avisa:\n\n{player} ha llegado a 500h.\n\nCreo que ya duerme dentro de una base militar. 😭🔥`,
+            milestones =
+                JSON.parse(
+                    fs.readFileSync(
+                        './milestones.json',
+                        'utf8'
+                    ) || '{}'
+                );
 
-        1000:
-            `📢 Antonio Recio anuncia:\n\n{player} ha alcanzado 1000h.\n\nEste hombre YA ES parte del mapa. 🚬🔥`
+        }
 
-    };
+        const kokeChannel =
+            guild.channels.cache.get(
+                KOKE_CHANNEL_ID
+            );
 
-    const milestonesList =
-        [24, 100, 250, 500, 1000];
+        const blockedRoles = [
+            'Admin',
+            'Dev',
+            'Owner',
+            'Staff',
+            'TopGG'
+        ];
 
-    const members =
-        await guild.members.fetch();
+        const funnyMessages = {
 
-    members.forEach(async member => {
+            24:
+                `📢 Antonio Recio informa:\n\n{player} acaba de desbloquear acceso a sugerencias.\n\nEste personaje ya es oficialmente un superviviente de MontepinarZ. 🚬🔥`,
 
-        const discordName =
-            member.displayName
-                .toLowerCase()
-                .replace(/[^a-z0-9]/g, '');
+            100:
+                `📢 Amador Rivas comunica:\n\n{player} acaba de alcanzar 100h.\n\nEste tío ya cotiza en Chernarus. 😭🔥`,
 
-        for (const id in players) {
+            250:
+                `📢 Enrique Pastor informa:\n\n{player} ya lleva 250h.\n\nEmpiezo a preocuparme seriamente por su salud mental. ☠️`,
 
-            const player =
-                players[id];
+            500:
+                `📢 Coque Calatrava avisa:\n\n{player} ha llegado a 500h.\n\nCreo que ya duerme dentro de una base militar. 😭🔥`,
 
-            const playerName =
-                player.name
+            1000:
+                `📢 Antonio Recio anuncia:\n\n{player} ha alcanzado 1000h.\n\nEste hombre YA ES parte del mapa. 🚬🔥`
+
+        };
+
+        const milestonesList =
+            [24, 100, 250, 500, 1000];
+
+        const members =
+            await guild.members.fetch();
+
+        members.forEach(async member => {
+
+            const discordName =
+                member.displayName
                     .toLowerCase()
                     .replace(/[^a-z0-9]/g, '');
 
-            const hours =
-                player.minutesPlayed / 60;
+            for (const id in players) {
 
-            if (
-                discordName === playerName &&
-                hours >= 24
-            ) {
+                const player =
+                    players[id];
 
-                const hasBlockedRole =
-                    member.roles.cache.some(r =>
-                        blockedRoles.includes(
-                            r.name
-                        )
-                    );
+                const playerName =
+                    player.name
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]/g, '');
+
+                const hours =
+                    player.minutesPlayed / 60;
 
                 if (
-                    !member.roles.cache.has(role.id) &&
-                    !hasBlockedRole
+                    discordName === playerName &&
+                    hours >= 24
                 ) {
 
-                    member.roles.add(role)
-                        .then(() => {
+                    const hasBlockedRole =
+                        member.roles.cache.some(r =>
+                            blockedRoles.includes(
+                                r.name
+                            )
+                        );
 
-                            console.log(
-                                `🎖️ Rol dado a ${player.name}`
+                    if (
+                        !member.roles.cache.has(role.id) &&
+                        !hasBlockedRole
+                    ) {
+
+                        member.roles.add(role)
+                            .then(() => {
+
+                                console.log(
+                                    `🎖️ Rol dado a ${player.name}`
+                                );
+
+                            })
+                            .catch(err =>
+                                console.log(err.message)
                             );
 
-                        })
-                        .catch(err =>
-                            console.log(err.message)
+                    }
+
+                    const playerHours =
+                        Math.floor(hours);
+
+                    milestonesList.forEach(async milestone => {
+
+                        const key =
+                            `${player.name}_${milestone}`;
+
+                        if (
+                            playerHours >= milestone &&
+                            !milestones[key]
+                        ) {
+
+                            milestones[key] = true;
+
+                            fs.writeFileSync(
+                                './milestones.json',
+                                JSON.stringify(
+                                    milestones,
+                                    null,
+                                    2
+                                )
+                            );
+
+                            const embed =
+                                new EmbedBuilder()
+                                    .setColor('#ff9900')
+                                    .setTitle('🏆 NUEVO LOGRO')
+                                    .setDescription(
+                                        funnyMessages[
+                                            milestone
+                                        ].replace(
+                                            '{player}',
+                                            player.name
+                                        )
+                                    )
+                                    .setTimestamp();
+
+                            if (kokeChannel) {
+
+                                kokeChannel.send({
+                                    embeds: [embed]
+                                });
+
+                            }
+
+                        }
+
+                    });
+
+                }
+
+            }
+
+        });
+
+    }
+
+    client.on(
+        'interactionCreate',
+        async interaction => {
+            console.log(
+                '🔥 INTERACTION:',
+                interaction.commandName
+            );
+            if (
+                !interaction.isChatInputCommand()
+            ) return;
+
+            // ONLINE
+            if (
+                interaction.commandName === 'online'
+            ) {
+
+                if (onlineCooldown) {
+
+                    return interaction.reply({
+                        content:
+                            '⏳ Espera unos segundos antes de volver a usar este comando.',
+                        ephemeral: true
+                    });
+
+                }
+
+                onlineCooldown = true;
+
+                setTimeout(() => {
+
+                    onlineCooldown = false;
+
+                }, 15000);
+
+                let online = 0;
+
+                if (fs.existsSync('./online.json')) {
+
+                    const data =
+                        JSON.parse(
+                            fs.readFileSync(
+                                './online.json',
+                                'utf8'
+                            )
+                        );
+
+                    online = data.online || 0;
+
+                }
+
+                const embed =
+                    new EmbedBuilder()
+                        .setColor('#00ff88')
+                        .setTitle('👥 JUGADORES ONLINE')
+                        .setDescription(
+                            `Hay **${online}/40** jugadores conectados`
+                        )
+                        .setTimestamp();
+
+                const onlineFile =
+                    './onlineMessage.json';
+
+                let saved = {};
+
+                if (fs.existsSync(onlineFile)) {
+
+                    saved =
+                        JSON.parse(
+                            fs.readFileSync(
+                                onlineFile,
+                                'utf8'
+                            ) || '{}'
                         );
 
                 }
 
-                const playerHours =
-                    Math.floor(hours);
-
-                milestonesList.forEach(async milestone => {
-
-                    const key =
-                        `${player.name}_${milestone}`;
+                try {
 
                     if (
-                        playerHours >= milestone &&
-                        !milestones[key]
+                        saved.messageId &&
+                        saved.channelId
                     ) {
 
-                        milestones[key] = true;
+                        const oldChannel =
+                            await client.channels.fetch(
+                                saved.channelId
+                            );
 
-                        fs.writeFileSync(
-                            './milestones.json',
-                            JSON.stringify(
-                                milestones,
-                                null,
-                                2
+                        const oldMsg =
+                            await oldChannel.messages.fetch(
+                                saved.messageId
+                            );
+
+                        await oldMsg.delete();
+
+                    }
+                } catch { }
+
+                const newMsg =
+                    await interaction.channel.send({
+                        embeds: [embed]
+                    });
+
+                saved.messageId =
+                    newMsg.id;
+                saved.channelId =
+                    interaction.channel.id;
+
+                fs.writeFileSync(
+                    onlineFile,
+                    JSON.stringify(
+                        saved,
+                        null,
+                        2
+                    )
+
+                );
+
+                return interaction.reply({
+                    content:
+                        '✅ Online actualizado.',
+                    ephemeral: true
+                });
+
+            }
+
+
+            // HORAS
+            if (
+                interaction.commandName === 'horas'
+            ) {
+
+                const nombre =
+                    interaction.options.getString(
+                        'nombre'
+                    );
+
+                let players = {};
+
+                if (fs.existsSync('./players.json')) {
+
+                    players =
+                        JSON.parse(
+                            fs.readFileSync(
+                                './players.json',
+                                'utf8'
                             )
                         );
 
-                        const embed =
-                            new EmbedBuilder()
-                                .setColor('#ff9900')
-                                .setTitle('🏆 NUEVO LOGRO')
-                                .setDescription(
-                                    funnyMessages[
-                                        milestone
-                                    ].replace(
-                                        '{player}',
-                                        player.name
-                                    )
-                                )
-                                .setTimestamp();
+                }
 
-                        if (kokeChannel) {
+                let foundPlayer = null;
 
-                            kokeChannel.send({
-                                embeds: [embed]
+                for (const id in players) {
+
+                    if (
+                        players[id].name
+                            .toLowerCase()
+                            .includes(
+                                nombre.toLowerCase()
+                            )
+                    ) {
+
+                        foundPlayer =
+                            players[id];
+
+                        break;
+
+                    }
+
+                }
+
+                if (!foundPlayer) {
+
+                    return interaction.reply({
+                        content:
+                            '❌ Jugador no encontrado',
+                        ephemeral: true
+                    });
+
+                }
+
+                const hours =
+                    (
+                        foundPlayer.minutesPlayed / 60
+                    ).toFixed(1);
+
+                const embed =
+                    new EmbedBuilder()
+                        .setColor('#ffaa00')
+                        .setTitle('⏳ HORAS JUGADAS')
+                        .setDescription(
+                            `**${foundPlayer.name}** tiene **${hours}h**`
+                        )
+                        .setTimestamp();
+
+                return interaction.reply({
+                    embeds: [embed]
+                });
+
+            }
+            // TESTROL
+            if (
+                interaction.commandName === 'testrol'
+            ) {
+
+                if (
+                    !interaction.member.permissions.has(
+                        'Administrator'
+                    )
+                ) {
+
+                    return interaction.reply({
+                        content:
+                            '❌ No tienes permisos.',
+                        ephemeral: true
+                    });
+
+                }
+                {
+
+                    try {
+
+                        const role =
+                            interaction.guild.roles.cache.get(
+                                '1509583483289210921'
+                            );
+
+                        if (!role) {
+
+                            return interaction.reply({
+                                content:
+                                    '❌ Rol no encontrado.',
+                                ephemeral: true
                             });
 
                         }
 
-                    }
-
-                });
-
-            }
-
-        }
-
-    });
-
-}
-
-client.on(
-    'interactionCreate',
-    async interaction => {
-
-        if (
-            !interaction.isChatInputCommand()
-        ) return;
-
-        // ONLINE
-        if (
-            interaction.commandName === 'online'
-        ) {
-
-            if (onlineCooldown) {
-
-                return interaction.reply({
-                    content:
-                        '⏳ Espera unos segundos antes de volver a usar este comando.',
-                    ephemeral: true
-                });
-
-            }
-
-            onlineCooldown = true;
-
-            setTimeout(() => {
-
-                onlineCooldown = false;
-
-            }, 15000);
-
-            let online = 0;
-
-            if (fs.existsSync('./online.json')) {
-
-                const data =
-                    JSON.parse(
-                        fs.readFileSync(
-                            './online.json',
-                            'utf8'
-                        )
-                    );
-
-                online = data.online || 0;
-
-            }
-
-            const embed =
-                new EmbedBuilder()
-                    .setColor('#00ff88')
-                    .setTitle('👥 JUGADORES ONLINE')
-                    .setDescription(
-                        `Hay **${online}/40** jugadores conectados`
-                    )
-                    .setTimestamp();
-
-            const onlineFile =
-                './onlineMessage.json';
-
-            let saved = {};
-
-            if (fs.existsSync(onlineFile)) {
-
-                saved =
-                    JSON.parse(
-                        fs.readFileSync(
-                            onlineFile,
-                            'utf8'
-                        ) || '{}'
-                    );
-
-            }
-
-            try {
-
-                if (
-                    saved.messageId &&
-                    saved.channelId
-                ) {
-
-                    const oldChannel =
-                        await client.channels.fetch(
-                            saved.channelId
+                        await interaction.member.roles.add(
+                            role
                         );
-
-                    const oldMsg =
-                        await oldChannel.messages.fetch(
-                            saved.messageId
-                        );
-
-                    await oldMsg.delete();
-
-                }
-            } catch { }
-
-            const newMsg =
-                await interaction.channel.send({
-                    embeds: [embed]
-                });
-
-            saved.messageId =
-                newMsg.id;
-            saved.channelId =
-                interaction.channel.id;
-
-            fs.writeFileSync(
-                onlineFile,
-                JSON.stringify(
-                    saved,
-                    null,
-                    2
-                )
-
-            );
-
-            return interaction.reply({
-                content:
-                    '✅ Online actualizado.',
-                ephemeral: true
-            });
-
-        }
-
-
-        // HORAS
-        if (
-            interaction.commandName === 'horas'
-        ) {
-
-            const nombre =
-                interaction.options.getString(
-                    'nombre'
-                );
-
-            let players = {};
-
-            if (fs.existsSync('./players.json')) {
-
-                players =
-                    JSON.parse(
-                        fs.readFileSync(
-                            './players.json',
-                            'utf8'
-                        )
-                    );
-
-            }
-
-            let foundPlayer = null;
-
-            for (const id in players) {
-
-                if (
-                    players[id].name
-                        .toLowerCase()
-                        .includes(
-                            nombre.toLowerCase()
-                        )
-                ) {
-
-                    foundPlayer =
-                        players[id];
-
-                    break;
-
-                }
-
-            }
-
-            if (!foundPlayer) {
-
-                return interaction.reply({
-                    content:
-                        '❌ Jugador no encontrado',
-                    ephemeral: true
-                });
-
-            }
-
-            const hours =
-                (
-                    foundPlayer.minutesPlayed / 60
-                ).toFixed(1);
-
-            const embed =
-                new EmbedBuilder()
-                    .setColor('#ffaa00')
-                    .setTitle('⏳ HORAS JUGADAS')
-                    .setDescription(
-                        `**${foundPlayer.name}** tiene **${hours}h**`
-                    )
-                    .setTimestamp();
-
-            return interaction.reply({
-                embeds: [embed]
-            });
-
-        }
-        // TESTROL
-        if (
-            interaction.commandName === 'testrol'
-        ) {
-
-            if (
-                !interaction.member.permissions.has(
-                    'Administrator'
-                )
-            ) {
-
-                return interaction.reply({
-                    content:
-                        '❌ No tienes permisos.',
-                    ephemeral: true
-                });
-
-            }
-            {
-
-                try {
-
-                    const role =
-                        interaction.guild.roles.cache.get(
-                            '1509583483289210921'
-                        );
-
-                    if (!role) {
 
                         return interaction.reply({
                             content:
-                                '❌ Rol no encontrado.',
+                                '✅ Rol Sin Verificar dado.',
+                            ephemeral: true
+                        });
+
+                    } catch (err) {
+
+                        console.log(err);
+
+                        return interaction.reply({
+                            content:
+                                '❌ Error dando rol.',
                             ephemeral: true
                         });
 
                     }
 
-                    await interaction.member.roles.add(
-                        role
-                    );
+                }
+            }
+            // QUITARROL
+            if (
+                interaction.commandName === 'quitarrol'
+            ) {
+
+                if (
+                    !interaction.member.permissions.has(
+                        'Administrator'
+                    )
+                ) {
 
                     return interaction.reply({
                         content:
-                            '✅ Rol Sin Verificar dado.',
-                        ephemeral: true
-                    });
-
-                } catch (err) {
-
-                    console.log(err);
-
-                    return interaction.reply({
-                        content:
-                            '❌ Error dando rol.',
+                            '❌ No tienes permisos.',
                         ephemeral: true
                     });
 
                 }
+                {
 
-            }
-        }
-        // QUITARROL
-        if (
-            interaction.commandName === 'quitarrol'
-        ) {
+                    try {
 
-            if (
-                !interaction.member.permissions.has(
-                    'Administrator'
-                )
-            ) {
+                        const role =
+                            interaction.guild.roles.cache.get(
+                                '1509583483289210921'
+                            );
 
-                return interaction.reply({
-                    content:
-                        '❌ No tienes permisos.',
-                    ephemeral: true
-                });
+                        if (!role) {
 
-            }
-            {
+                            return interaction.reply({
+                                content:
+                                    '❌ Rol no encontrado.',
+                                ephemeral: true
+                            });
 
-                try {
+                        }
 
-                    const role =
-                        interaction.guild.roles.cache.get(
-                            '1509583483289210921'
+                        await interaction.member.roles.remove(
+                            role
                         );
-
-                    if (!role) {
 
                         return interaction.reply({
                             content:
-                                '❌ Rol no encontrado.',
+                                '✅ Rol Sin Verificar quitado.',
+                            ephemeral: true
+                        });
+
+                    } catch (err) {
+
+                        console.log(err);
+
+                        return interaction.reply({
+                            content:
+                                '❌ Error quitando rol.',
                             ephemeral: true
                         });
 
                     }
 
-                    await interaction.member.roles.remove(
-                        role
-                    );
+                }
+            }
 
-                    return interaction.reply({
-                        content:
-                            '✅ Rol Sin Verificar quitado.',
-                        ephemeral: true
-                    });
+            // VERIFICAR
+            if (
+                interaction.commandName === 'verificar'
+            ) {
 
-                } catch (err) {
+                let linkedAccounts = {};
 
-                    console.log(err);
+                if (
+                    fs.existsSync(
+                        './linkedAccounts.json'
+                    )
+                ) {
 
-                    return interaction.reply({
-                        content:
-                            '❌ Error quitando rol.',
-                        ephemeral: true
-                    });
+                    linkedAccounts =
+                        JSON.parse(
+                            fs.readFileSync(
+                                './linkedAccounts.json',
+                                'utf8'
+                            ) || '{}'
+                        );
 
                 }
 
-            }
-        }
+                if (
+                    linkedAccounts[
+                    interaction.user.id
+                    ]
+                ) {
 
-        // VERIFICAR
-        if (
-            interaction.commandName === 'verificar'
-        ) {
+                    return interaction.reply({
 
-            let linkedAccounts = {};
+                        embeds: [
 
-            if (
-                fs.existsSync(
-                    './linkedAccounts.json'
-                )
-            ) {
-
-                linkedAccounts =
-                    JSON.parse(
-                        fs.readFileSync(
-                            './linkedAccounts.json',
-                            'utf8'
-                        ) || '{}'
-                    );
-
-            }
-
-            if (
-                linkedAccounts[
-                interaction.user.id
-                ]
-            ) {
-
-                return interaction.reply({
-
-                    embeds: [
-
-                        new EmbedBuilder()
-                            .setColor('#ff9900')
-                            .setTitle('✅ YA VERIFICADO')
-                            .setDescription(
-                                `📢 Antonio Recio informa:
+                            new EmbedBuilder()
+                                .setColor('#ff9900')
+                                .setTitle('✅ YA VERIFICADO')
+                                .setDescription(
+                                    `📢 Antonio Recio informa:
 
 Tú ya estás verificado máquina 😭🔥
 
 No intentes hacer trampas que aquí no somos amateurs. 🚬`
-                            )
+                                )
 
-                    ],
+                        ],
 
-                    ephemeral: true
+                        ephemeral: true
 
-                });
-
-            }
-
-            let pending = {};
-
-            if (
-                fs.existsSync(
-                    './pendingVerifications.json'
-                )
-            ) {
-
-                pending =
-                    JSON.parse(
-                        fs.readFileSync(
-                            './pendingVerifications.json',
-                            'utf8'
-                        ) || '{}'
-                    );
-
-            }
-
-            for (const code in pending) {
-
-                if (
-                    pending[code].expires <
-                    Date.now()
-                ) {
-
-                    delete pending[code];
+                    });
 
                 }
 
-            }
+                let pending = {};
 
-            fs.writeFileSync(
-                './pendingVerifications.json',
-                JSON.stringify(
-                    pending,
-                    null,
-                    2
-                )
-            );
+                if (
+                    fs.existsSync(
+                        './pendingVerifications.json'
+                    )
+                ) {
 
-            const alreadyPending =
-                Object.values(pending)
-                    .find(v =>
-                        v.discordId ===
-                        interaction.user.id
-                    );
+                    pending =
+                        JSON.parse(
+                            fs.readFileSync(
+                                './pendingVerifications.json',
+                                'utf8'
+                            ) || '{}'
+                        );
 
-            if (alreadyPending) {
+                }
 
-                return interaction.reply({
+                for (const code in pending) {
 
-                    content:
-                        '❌ Ya tienes una verificación pendiente.',
+                    if (
+                        pending[code].expires <
+                        Date.now()
+                    ) {
 
-                    ephemeral: true
+                        delete pending[code];
 
-                });
+                    }
 
-            }
+                }
 
-            const code =
-                crypto.randomBytes(2)
-                    .toString('hex')
-                    .toUpperCase();
+                fs.writeFileSync(
+                    './pendingVerifications.json',
+                    JSON.stringify(
+                        pending,
+                        null,
+                        2
+                    )
+                );
 
-            pending[code] = {
+                const alreadyPending =
+                    Object.values(pending)
+                        .find(v =>
+                            v.discordId ===
+                            interaction.user.id
+                        );
 
-                discordId:
-                    interaction.user.id,
+                if (alreadyPending) {
 
-                expires:
-                    Date.now() +
-                    (10 * 60 * 1000)
+                    return interaction.reply({
 
-            };
+                        content:
+                            '❌ Ya tienes una verificación pendiente.',
 
-            fs.writeFileSync(
-                './pendingVerifications.json',
-                JSON.stringify(
-                    pending,
-                    null,
-                    2
-                )
-            );
+                        ephemeral: true
 
-            const embed =
-                new EmbedBuilder()
-                    .setColor('#00ff88')
-                    .setTitle('🔐 VERIFICACIÓN DAYZ')
-                    .setDescription(
+                    });
 
-                        `📢 Antonio Recio informa:
+                }
+
+                const code =
+                    crypto.randomBytes(2)
+                        .toString('hex')
+                        .toUpperCase();
+
+                pending[code] = {
+
+                    discordId:
+                        interaction.user.id,
+
+                    expires:
+                        Date.now() +
+                        (10 * 60 * 1000)
+
+                };
+
+                fs.writeFileSync(
+                    './pendingVerifications.json',
+                    JSON.stringify(
+                        pending,
+                        null,
+                        2
+                    )
+                );
+
+                const embed =
+                    new EmbedBuilder()
+                        .setColor('#00ff88')
+                        .setTitle('🔐 VERIFICACIÓN DAYZ')
+                        .setDescription(
+
+                            `📢 Antonio Recio informa:
 
 Para verificar tu cuenta,
 COPIA exactamente este comando
@@ -865,51 +868,51 @@ y pégalo en el chat global de DayZ 😭🔥
 ━━━━━━━━━━━━━━
 
 ⏰ El código expira en 10 minutos.`
-                    )
-                    .setTimestamp();
+                        )
+                        .setTimestamp();
 
-            return interaction.reply({
-                embeds: [embed],
-                ephemeral: true
-            });
+                return interaction.reply({
+                    embeds: [embed],
+                    ephemeral: true
+                });
 
+            }
         }
-    }
 
-);
+    );
 
-client.on(
-    'guildMemberAdd',
-    async member => {
+    client.on(
+        'guildMemberAdd',
+        async member => {
 
-        try {
+            try {
 
-            const role =
-                member.guild.roles.cache.get(
-                    '1509583483289210921'
-                );
+                const role =
+                    member.guild.roles.cache.get(
+                        '1509583483289210921'
+                    );
 
-            if (role) {
+                if (role) {
 
-                await member.roles.add(role);
+                    await member.roles.add(role);
+
+                    console.log(
+                        `🛑 Rol Sin Verificar dado a ${member.user.tag}`
+                    );
+
+                }
+
+            } catch (err) {
 
                 console.log(
-                    `🛑 Rol Sin Verificar dado a ${member.user.tag}`
+                    '❌ Error dando rol:',
+                    err
                 );
 
             }
 
-        } catch (err) {
-
-            console.log(
-                '❌ Error dando rol:',
-                err
-            );
-
         }
-
-    }
-);
+    );
 
     // client.login(process.env.TOKEN);
 });
