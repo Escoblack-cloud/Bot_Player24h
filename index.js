@@ -114,6 +114,25 @@ const KOKE_CHANNEL_ID = '1509278581094879233';
 const PLAYER_ROLE_ID = '1508481070289649786';
 
 let messageId = null;
+let onlineCooldown = false;
+
+if (onlineCooldown) {
+
+    return interaction.reply({
+        content:
+            '⏳ Espera unos segundos antes de volver a usar este comando.',
+        ephemeral: true
+    });
+
+}
+
+onlineCooldown = true;
+
+setTimeout(() => {
+
+    onlineCooldown = false;
+
+}, 15000);
 
 if (fs.existsSync('./messageId.txt')) {
 
@@ -304,9 +323,11 @@ ${randomPhrase}`
             }
 
             if (!ids) return;
+            let rebuildAll = false;
 
             // EDITAR INFO
-            let infoMsg = null;
+            infoMsg = null;
+            rebuildAll = true;
 
             try {
 
@@ -388,8 +409,47 @@ ${randomPhrase}`
 
             }
 
+            if (rebuildAll) {
+
+                const newInfo =
+                    await channel.send({
+                        embeds: [infoEmbed]
+                    });
+
+                const newTop =
+                    await channel.send({
+                        embeds: [topEmbed]
+                    });
+
+                const newKing =
+                    await channel.send({
+                        embeds: [kingEmbed]
+                    });
+
+                ids = {
+
+                    info: newInfo.id,
+                    top: newTop.id,
+                    king: newKing.id
+
+                };
+
+                fs.writeFileSync(
+                    './messageId.txt',
+                    JSON.stringify(
+                        ids,
+                        null,
+                        2
+                    )
+                );
+
+                return;
+
+            }
+
             // EDITAR REY
-            let kingMsg = null;
+            kingMsg = null;
+            rebuildAll = true;
 
             try {
 
@@ -809,6 +869,125 @@ client.on(
             return interaction.reply({
                 embeds: [embed]
             });
+
+        }
+        // TESTROL
+        if (
+            interaction.commandName === 'testrol'
+        )
+            if (
+                !interaction.member.permissions.has(
+                    'Administrator'
+                )
+            ) {
+
+                return interaction.reply({
+                    content:
+                        '❌ No tienes permisos.',
+                    ephemeral: true
+                });
+
+            }
+        {
+
+            try {
+
+                const role =
+                    interaction.guild.roles.cache.get(
+                        '1509583483289210921'
+                    );
+
+                if (!role) {
+
+                    return interaction.reply({
+                        content:
+                            '❌ Rol no encontrado.',
+                        ephemeral: true
+                    });
+
+                }
+
+                await interaction.member.roles.add(
+                    role
+                );
+
+                return interaction.reply({
+                    content:
+                        '✅ Rol Sin Verificar dado.',
+                    ephemeral: true
+                });
+
+            } catch (err) {
+
+                console.log(err);
+
+                return interaction.reply({
+                    content:
+                        '❌ Error dando rol.',
+                    ephemeral: true
+                });
+
+            }
+
+        }
+
+        // QUITARROL
+        if (
+            interaction.commandName === 'quitarrol'
+        )
+            if (
+                !interaction.member.permissions.has(
+                    'Administrator'
+                )
+            ) {
+
+                return interaction.reply({
+                    content:
+                        '❌ No tienes permisos.',
+                    ephemeral: true
+                });
+
+            }
+        {
+
+            try {
+
+                const role =
+                    interaction.guild.roles.cache.get(
+                        '1509583483289210921'
+                    );
+
+                if (!role) {
+
+                    return interaction.reply({
+                        content:
+                            '❌ Rol no encontrado.',
+                        ephemeral: true
+                    });
+
+                }
+
+                await interaction.member.roles.remove(
+                    role
+                );
+
+                return interaction.reply({
+                    content:
+                        '✅ Rol Sin Verificar quitado.',
+                    ephemeral: true
+                });
+
+            } catch (err) {
+
+                console.log(err);
+
+                return interaction.reply({
+                    content:
+                        '❌ Error quitando rol.',
+                    ephemeral: true
+                });
+
+            }
 
         }
 
