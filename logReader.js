@@ -107,19 +107,10 @@ async function downloadLog() {
     try {
 
         await sftp.connect({
-
-            host:
-                process.env.SFTP_HOST,
-
-            port:
-                process.env.SFTP_PORT,
-
-            username:
-                process.env.SFTP_USER,
-
-            password:
-                process.env.SFTP_PASS
-
+            host: process.env.SFTP_HOST,
+            port: process.env.SFTP_PORT,
+            username: process.env.SFTP_USER,
+            password: process.env.SFTP_PASS
         });
 
         await sftp.fastGet(
@@ -186,6 +177,7 @@ setInterval(async () => {
                     text += data.toString();
 
                 });
+            console.log(await sftp.list('.'));
 
             stream.on(
                 'end',
