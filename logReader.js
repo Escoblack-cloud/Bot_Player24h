@@ -123,7 +123,7 @@ async function downloadLog() {
         });
 
         await sftp.fastGet(
-            '178.33.122.90_2491/profiles/server_console.log',
+            'profiles/server_console.log',
             './server_console.log'
         );
 

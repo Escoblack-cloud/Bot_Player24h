@@ -1,7 +1,12 @@
+.env
+node_modules/
+
 players.json
 online.json
 onlineMessage.json
 linkedAccounts.json
 pendingVerifications.json
 milestones.json
+
+server_console.log
 messageId.txt
