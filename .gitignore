@@ -1,7 +1,7 @@
-node_modules
-.env
-server_console.log
-online.json
-hallMessage.json
-messageId.txt
 players.json
+online.json
+onlineMessage.json
+linkedAccounts.json
+pendingVerifications.json
+milestones.json
+messageId.txt

@@ -62,7 +62,9 @@ client.once('clientReady', () => {
 
 });
 
-client.login(process.env.TOKEN);
+client.login(
+    process.env.DISCORD_TOKEN
+);
 
 function loadPlayers() {
 
@@ -225,7 +227,7 @@ setInterval(async () => {
 
                         const verifyMatch =
                             line.match(
-                                /BattlEye Server: \(Global\) (.+?): \+\/[Vv]erificar (.+)/
+                                /BattlEye Server: \(Global\) (.+?): \+?\/[Vv]erificar (.+)/
                             );
 
                         if (verifyMatch) {
@@ -306,7 +308,8 @@ setInterval(async () => {
                                         2
                                     )
                                 );
-
+                                const discordId =
+                                    pending[code].discordId;
                                 delete pending[code];
 
                                 fs.writeFileSync(
@@ -321,7 +324,47 @@ setInterval(async () => {
                                 console.log(
                                     `✅ ${playerName} verificado correctamente`
                                 );
+                                try {
 
+                                    const guild =
+                                        client.guilds.cache.first();
+
+                                    const member =
+                                        await guild.members.fetch(
+                                            discordId
+                                        );
+
+                                    // SIN VERIFICAR
+                                    const unverifiedRole =
+                                        guild.roles.cache.get(
+                                            '1509583483289210921'
+                                        );
+
+                                    if (
+                                        unverifiedRole &&
+                                        member.roles.cache.has(
+                                            unverifiedRole.id
+                                        )
+                                    ) {
+
+                                        await member.roles.remove(
+                                            unverifiedRole
+                                        );
+
+                                        console.log(
+                                            `🗑️ Rol Sin Verificar quitado a ${playerName}`
+                                        );
+
+                                    }
+
+                                } catch (err) {
+
+                                    console.log(
+                                        '❌ Error quitando rol Sin Verificar:',
+                                        err.message
+                                    );
+
+                                }
                                 try {
 
                                     const guild =
@@ -351,15 +394,13 @@ Espero que no robe cobre del vecindario.`
                                             )
                                             .setTimestamp();
 
-                                    if (generalChannel) {
+                                    // generalChannel.send({
+                                    //     embeds: [embed]
+                                    // });
 
-                                        generalChannel.send({
-                                            embeds: [embed]
-                                        });
+                                }
 
-                                    }
-
-                                } catch (err) {
+                                catch (err) {
 
                                     console.log(
                                         '❌ Error enviando mensaje verify'

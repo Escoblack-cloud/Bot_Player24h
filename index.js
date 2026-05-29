@@ -147,12 +147,13 @@ const commands = [
         .setDescription('Quitar rol Sin Verificar')
 
 ].map(command => command.toJSON());
-const GUILD_ID = 1490290252047323186
+const GUILD_ID = '1490290252047323186';
 const rest =
     new REST({ version: '10' })
-        .setToken(process.env.TOKEN);
-
+        .setToken(process.env.DISCORD_TOKEN);
 client.once('clientReady', async () => {
+
+    console.log('🔥 CLIENT READY EVENT');
 
     console.log(
         '🛡️ Sentinel online | BlackForge Systems'
@@ -161,9 +162,12 @@ client.once('clientReady', async () => {
     try {
 
         await rest.put(
-            cationCommands(client.user.id),
+            Routes.applicationGuildCommands(
+                client.user.id,
+                GUILD_ID
+            ),
             { body: [] }
-        ); Routes.appli
+        );
 
         console.log(
             '🧹 Comandos antiguos eliminados'
@@ -194,8 +198,8 @@ client.once('clientReady', async () => {
 
     }
 
-    const channel =
-        await client.channels.fetch(CHANNEL_ID);
+    // const channel =
+    //     await client.channels.fetch(CHANNEL_ID);
 
 
     async function checkPlayerRoles() {
@@ -387,10 +391,14 @@ client.once('clientReady', async () => {
         });
 
     }
+});
 
-    client.on(
-        'interactionCreate',
-        async interaction => {
+client.on(
+    'interactionCreate',
+    async interaction => {
+
+        try {
+
             console.log(
                 '🔥 INTERACTION:',
                 interaction.commandName
@@ -506,7 +514,7 @@ client.once('clientReady', async () => {
 
                 );
 
-                return interaction.reply({
+                interaction.reply({
                     content:
                         '✅ Online actualizado.',
                     ephemeral: true
@@ -589,6 +597,118 @@ client.once('clientReady', async () => {
                 });
 
             }
+            // VERIFICAR
+            if (
+                interaction.commandName === 'verificar'
+            ) {
+
+                let pending = {};
+
+                if (
+                    fs.existsSync(
+                        './pendingVerifications.json'
+                    )
+                ) {
+
+                    pending = JSON.parse(
+                        fs.readFileSync(
+                            './pendingVerifications.json',
+                            'utf8'
+                        ) || '{}'
+                    );
+
+                }
+
+                const existingCode =
+                    Object.keys(pending).find(
+                        code =>
+                            pending[code].discordId ===
+                            interaction.user.id &&
+                            pending[code].expires >
+                            Date.now()
+                    );
+
+                if (existingCode) {
+
+                    const minutes =
+                        Math.ceil(
+                            (
+                                pending[existingCode]
+                                    .expires -
+                                Date.now()
+                            ) / 60000
+                        );
+
+                    return interaction.reply({
+                        content:
+                            `✅ Código generado correctamente.
+
+⏳ Caduca en 10 minutos.
+
+📋 Copia y pega esto en el chat GLOBAL de DayZ:
+
+\`\`\`
+/Verificar ${existingCode}
+\`\`\`
+
+⚠️ También funciona:
+
+\`\`\`
+/Verificar ${existingCode}
+\`\`\`
+
+🕒 Sentinel puede tardar hasta 60 segundos en procesar la verificación.`,
+                        ephemeral: true
+                    });
+
+                }
+
+                const code =
+                    crypto
+                        .randomBytes(3)
+                        .toString('hex')
+                        .toUpperCase();
+
+                pending[code] = {
+
+                    discordId:
+                        interaction.user.id,
+
+                    expires:
+                        Date.now() +
+                        (10 * 60 * 1000)
+
+                };
+
+                fs.writeFileSync(
+                    './pendingVerifications.json',
+                    JSON.stringify(
+                        pending,
+                        null,
+                        2
+                    )
+                );
+
+                return interaction.reply({
+                    content:
+                        `✅ Código generado correctamente.
+
+⏳ Este código caduca en 10 minutos.
+
+📋 Copia y pega exactamente esto en el chat GLOBAL de DayZ:
+
+\`\`\`
+/Verificar ${code}
+\`\`\`
+
+⚠️ No modifiques ningún carácter.
+
+🕒 Si no recibes el rol inmediatamente, espera hasta 60 segundos para que Sentinel procese los logs.`,
+                    ephemeral: true
+                });
+
+            }
+
             // TESTROL
             if (
                 interaction.commandName === 'testrol'
@@ -668,251 +788,81 @@ client.once('clientReady', async () => {
                     });
 
                 }
-                {
 
-                    try {
+                try {
 
-                        const role =
-                            interaction.guild.roles.cache.get(
-                                '1509583483289210921'
-                            );
-
-                        if (!role) {
-
-                            return interaction.reply({
-                                content:
-                                    '❌ Rol no encontrado.',
-                                ephemeral: true
-                            });
-
-                        }
-
-                        await interaction.member.roles.remove(
-                            role
+                    const role =
+                        interaction.guild.roles.cache.get(
+                            '1509583483289210921'
                         );
 
-                        return interaction.reply({
-                            content:
-                                '✅ Rol Sin Verificar quitado.',
-                            ephemeral: true
-                        });
-
-                    } catch (err) {
-
-                        console.log(err);
+                    if (!role) {
 
                         return interaction.reply({
                             content:
-                                '❌ Error quitando rol.',
+                                '❌ Rol no encontrado.',
                             ephemeral: true
                         });
 
                     }
 
-                }
-            }
-
-            // VERIFICAR
-            if (
-                interaction.commandName === 'verificar'
-            ) {
-
-                let linkedAccounts = {};
-
-                if (
-                    fs.existsSync(
-                        './linkedAccounts.json'
-                    )
-                ) {
-
-                    linkedAccounts =
-                        JSON.parse(
-                            fs.readFileSync(
-                                './linkedAccounts.json',
-                                'utf8'
-                            ) || '{}'
-                        );
-
-                }
-
-                if (
-                    linkedAccounts[
-                    interaction.user.id
-                    ]
-                ) {
+                    await interaction.member.roles.remove(
+                        role
+                    );
 
                     return interaction.reply({
-
-                        embeds: [
-
-                            new EmbedBuilder()
-                                .setColor('#ff9900')
-                                .setTitle('✅ YA VERIFICADO')
-                                .setDescription(
-                                    `📢 Antonio Recio informa:
-
-Tú ya estás verificado máquina 😭🔥
-
-No intentes hacer trampas que aquí no somos amateurs. 🚬`
-                                )
-
-                        ],
-
-                        ephemeral: true
-
-                    });
-
-                }
-
-                let pending = {};
-
-                if (
-                    fs.existsSync(
-                        './pendingVerifications.json'
-                    )
-                ) {
-
-                    pending =
-                        JSON.parse(
-                            fs.readFileSync(
-                                './pendingVerifications.json',
-                                'utf8'
-                            ) || '{}'
-                        );
-
-                }
-
-                for (const code in pending) {
-
-                    if (
-                        pending[code].expires <
-                        Date.now()
-                    ) {
-
-                        delete pending[code];
-
-                    }
-
-                }
-
-                fs.writeFileSync(
-                    './pendingVerifications.json',
-                    JSON.stringify(
-                        pending,
-                        null,
-                        2
-                    )
-                );
-
-                const alreadyPending =
-                    Object.values(pending)
-                        .find(v =>
-                            v.discordId ===
-                            interaction.user.id
-                        );
-
-                if (alreadyPending) {
-
-                    return interaction.reply({
-
                         content:
-                            '❌ Ya tienes una verificación pendiente.',
-
+                            '✅ Rol Sin Verificar quitado.',
                         ephemeral: true
+                    });
 
+                } catch (err) {
+
+                    console.log(err);
+
+                    return interaction.reply({
+                        content:
+                            '❌ Error quitando rol.',
+                        ephemeral: true
                     });
 
                 }
 
-                const code =
-                    crypto.randomBytes(2)
-                        .toString('hex')
-                        .toUpperCase();
-
-                pending[code] = {
-
-                    discordId:
-                        interaction.user.id,
-
-                    expires:
-                        Date.now() +
-                        (10 * 60 * 1000)
-
-                };
-
-                fs.writeFileSync(
-                    './pendingVerifications.json',
-                    JSON.stringify(
-                        pending,
-                        null,
-                        2
-                    )
-                );
-
-                const embed =
-                    new EmbedBuilder()
-                        .setColor('#00ff88')
-                        .setTitle('🔐 VERIFICACIÓN DAYZ')
-                        .setDescription(
-
-                            `📢 Antonio Recio informa:
-
-Para verificar tu cuenta,
-COPIA exactamente este comando
-y pégalo en el chat global de DayZ 😭🔥
-
-━━━━━━━━━━━━━━
-
-\`/verificar ${code}\`
-
-━━━━━━━━━━━━━━
-
-⏰ El código expira en 10 minutos.`
-                        )
-                        .setTimestamp();
-
-                return interaction.reply({
-                    embeds: [embed],
-                    ephemeral: true
-                });
-
             }
-        }
 
-    );
+        } catch (err) {
 
-    client.on(
-        'guildMemberAdd',
-        async member => {
+            console.log(
+                '❌ INTERACTION ERROR:',
+                err
+            );
 
             try {
 
-                const role =
-                    member.guild.roles.cache.get(
-                        '1509583483289210921'
-                    );
+                if (
+                    interaction.deferred ||
+                    interaction.replied
+                ) {
 
-                if (role) {
+                    await interaction.editReply({
+                        content:
+                            '❌ Error interno.'
+                    });
 
-                    await member.roles.add(role);
+                } else {
 
-                    console.log(
-                        `🛑 Rol Sin Verificar dado a ${member.user.tag}`
-                    );
+                    await interaction.reply({
+                        content:
+                            '❌ Error interno.',
+                        ephemeral: true
+                    });
 
                 }
 
-            } catch (err) {
-
-                console.log(
-                    '❌ Error dando rol:',
-                    err
-                );
-
-            }
+            } catch { }
 
         }
-    );
-
-    // client.login(process.env.TOKEN);
-});
+    });
+client.login(
+    process.env.DISCORD_TOKEN
+);
