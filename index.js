@@ -408,9 +408,16 @@ client.on(
             ) return;
 
             // ONLINE
-            if (
-                interaction.commandName === 'online'
-            ) {
+            if (interaction.commandName === 'online') {
+
+                console.log('🧪 COMANDO ONLINE EJECUTADO');
+
+                return interaction.reply({
+                    content: 'TEST ONLINE OK',
+                    ephemeral: true
+                });
+
+            } {
 
                 if (onlineCooldown) {
 
