@@ -101,8 +101,7 @@ function savePlayers(data) {
 
 async function downloadLog() {
 
-    const sftp =
-        new ClientSFTP();
+    const sftp = new ClientSFTP();
 
     try {
 
@@ -112,6 +111,11 @@ async function downloadLog() {
             username: process.env.SFTP_USER,
             password: process.env.SFTP_PASS
         });
+
+        console.log(
+            '📂 ROOT:',
+            await sftp.list('.')
+        );
 
         await sftp.fastGet(
             'profiles/server_console.log',
@@ -128,9 +132,7 @@ async function downloadLog() {
     } finally {
 
         try {
-
             await sftp.end();
-
         } catch { }
 
     }
@@ -177,7 +179,7 @@ setInterval(async () => {
                     text += data.toString();
 
                 });
-            console.log(await sftp.list('.'));
+
 
             stream.on(
                 'end',
