@@ -112,13 +112,8 @@ async function downloadLog() {
             password: process.env.SFTP_PASS
         });
 
-        const files = await sftp.list('178.33.122.90_2491');
-        console.log('📂 SERVER ROOT:', files);
-
-        return;
-
         await sftp.fastGet(
-            'profiles/server_console.log',
+            '178.33.122.90_2491/profiles/server_console.log',
             './server_console.log'
         );
 
