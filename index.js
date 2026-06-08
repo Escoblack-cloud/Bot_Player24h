@@ -46,8 +46,30 @@ const {
 } = require('discord.js');
 
 const fs = require('fs');
+const path = require('path');
 
 const crypto = require('crypto');
+
+function generateVerificationCode(length = 6) {
+
+    const chars =
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+    let result = '';
+
+    for (let i = 0; i < length; i++) {
+
+        result += chars.charAt(
+            Math.floor(
+                Math.random() * chars.length
+            )
+        );
+
+    }
+
+    return result;
+
+}
 
 function cleanExpiredCodes() {
 
@@ -408,16 +430,8 @@ client.on(
             ) return;
 
             // ONLINE
+            // ONLINE
             if (interaction.commandName === 'online') {
-
-                console.log('🧪 COMANDO ONLINE EJECUTADO');
-
-                return interaction.reply({
-                    content: 'TEST ONLINE OK',
-                    ephemeral: true
-                });
-
-            } {
 
                 if (onlineCooldown) {
 
@@ -432,22 +446,16 @@ client.on(
                 onlineCooldown = true;
 
                 setTimeout(() => {
-
                     onlineCooldown = false;
-
                 }, 15000);
 
                 let online = 0;
 
                 if (fs.existsSync('./online.json')) {
 
-                    const data =
-                        JSON.parse(
-                            fs.readFileSync(
-                                './online.json',
-                                'utf8'
-                            )
-                        );
+                    const data = JSON.parse(
+                        fs.readFileSync('./online.json', 'utf8')
+                    );
 
                     online = data.online || 0;
 
@@ -469,13 +477,12 @@ client.on(
 
                 if (fs.existsSync(onlineFile)) {
 
-                    saved =
-                        JSON.parse(
-                            fs.readFileSync(
-                                onlineFile,
-                                'utf8'
-                            ) || '{}'
-                        );
+                    saved = JSON.parse(
+                        fs.readFileSync(
+                            onlineFile,
+                            'utf8'
+                        ) || '{}'
+                    );
 
                 }
 
@@ -499,6 +506,7 @@ client.on(
                         await oldMsg.delete();
 
                     }
+
                 } catch { }
 
                 const newMsg =
@@ -506,29 +514,20 @@ client.on(
                         embeds: [embed]
                     });
 
-                saved.messageId =
-                    newMsg.id;
-                saved.channelId =
-                    interaction.channel.id;
+                saved.messageId = newMsg.id;
+                saved.channelId = interaction.channel.id;
 
                 fs.writeFileSync(
                     onlineFile,
-                    JSON.stringify(
-                        saved,
-                        null,
-                        2
-                    )
-
+                    JSON.stringify(saved, null, 2)
                 );
 
-                interaction.reply({
-                    content:
-                        '✅ Online actualizado.',
+                return interaction.reply({
+                    content: '✅ Online actualizado.',
                     ephemeral: true
                 });
 
             }
-
 
             // HORAS
             if (
@@ -605,177 +604,45 @@ client.on(
 
             }
             // VERIFICAR
-            if (
-                interaction.commandName === 'verificar'
-            ) {
+
+            if (interaction.commandName === 'verificar') {
+
+                const pendingFile = path.join(
+                    process.cwd(),
+                    'pendingVerifications.json'
+                );
 
                 let pending = {};
 
-                if (
-                    fs.existsSync(
-                        './pendingVerifications.json'
-                    )
-                ) {
-
+                if (fs.existsSync(pendingFile)) {
                     pending = JSON.parse(
-                        fs.readFileSync(
-                            './pendingVerifications.json',
-                            'utf8'
-                        ) || '{}'
+                        fs.readFileSync(pendingFile, 'utf8')
                     );
-
                 }
 
-                const existingCode =
-                    Object.keys(pending).find(
-                        code =>
-                            pending[code].discordId ===
-                            interaction.user.id &&
-                            pending[code].expires >
-                            Date.now()
-                    );
-
-                if (existingCode) {
-
-                    const minutes =
-                        Math.ceil(
-                            (
-                                pending[existingCode]
-                                    .expires -
-                                Date.now()
-                            ) / 60000
-                        );
-
-                    return interaction.reply({
-                        content:
-                            `✅ Código generado correctamente.
-
-⏳ Caduca en 10 minutos.
-
-📋 Copia y pega esto en el chat GLOBAL de DayZ:
-
-\`\`\`
-/Verificar ${existingCode}
-\`\`\`
-
-⚠️ También funciona:
-
-\`\`\`
-/Verificar ${existingCode}
-\`\`\`
-
-🕒 Sentinel puede tardar hasta 60 segundos en procesar la verificación.`,
-                        ephemeral: true
-                    });
-
-                }
-
-                const code =
-                    crypto
-                        .randomBytes(3)
-                        .toString('hex')
-                        .toUpperCase();
+                const code = generateVerificationCode();
 
                 pending[code] = {
-
-                    discordId:
-                        interaction.user.id,
-
-                    expires:
-                        Date.now() +
-                        (10 * 60 * 1000)
-
+                    discordId: interaction.user.id,
+                    expires: Date.now() + (10 * 60 * 1000)
                 };
 
                 fs.writeFileSync(
-                    './pendingVerifications.json',
-                    JSON.stringify(
-                        pending,
-                        null,
-                        2
-                    )
+                    pendingFile,
+                    JSON.stringify(pending, null, 4)
                 );
 
                 return interaction.reply({
                     content:
-                        `✅ Código generado correctamente.
+                        `✅ Código generado.
 
-⏳ Este código caduca en 10 minutos.
+Ve al juego y escribe:
 
-📋 Copia y pega exactamente esto en el chat GLOBAL de DayZ:
+/verificar ${code}
 
-\`\`\`
-/Verificar ${code}
-\`\`\`
-
-⚠️ No modifiques ningún carácter.
-
-🕒 Si no recibes el rol inmediatamente, espera hasta 60 segundos para que Sentinel procese los logs.`,
+⏳ El código caduca en 10 minutos.`,
                     ephemeral: true
                 });
-
-            }
-
-            // TESTROL
-            if (
-                interaction.commandName === 'testrol'
-            ) {
-
-                if (
-                    !interaction.member.permissions.has(
-                        'Administrator'
-                    )
-                ) {
-
-                    return interaction.reply({
-                        content:
-                            '❌ No tienes permisos.',
-                        ephemeral: true
-                    });
-
-                }
-                {
-
-                    try {
-
-                        const role =
-                            interaction.guild.roles.cache.get(
-                                '1509583483289210921'
-                            );
-
-                        if (!role) {
-
-                            return interaction.reply({
-                                content:
-                                    '❌ Rol no encontrado.',
-                                ephemeral: true
-                            });
-
-                        }
-
-                        await interaction.member.roles.add(
-                            role
-                        );
-
-                        return interaction.reply({
-                            content:
-                                '✅ Rol Sin Verificar dado.',
-                            ephemeral: true
-                        });
-
-                    } catch (err) {
-
-                        console.log(err);
-
-                        return interaction.reply({
-                            content:
-                                '❌ Error dando rol.',
-                            ephemeral: true
-                        });
-
-                    }
-
-                }
             }
             // QUITARROL
             if (
